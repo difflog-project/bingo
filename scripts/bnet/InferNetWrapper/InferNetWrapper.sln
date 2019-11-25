@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InferNetWrapper", "InferNetWrapper\InferNetWrapper.csproj", "{DE28B9F4-C549-4F9D-B903-583D9C526833}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DE28B9F4-C549-4F9D-B903-583D9C526833}.Debug|x86.ActiveCfg = Debug|x86
+		{DE28B9F4-C549-4F9D-B903-583D9C526833}.Debug|x86.Build.0 = Debug|x86
+		{DE28B9F4-C549-4F9D-B903-583D9C526833}.Release|x86.ActiveCfg = Release|x86
+		{DE28B9F4-C549-4F9D-B903-583D9C526833}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.TextStylePolicy = $1
+		$1.inheritsSet = null
+		$1.scope = text/x-csharp
+		$0.CSharpFormattingPolicy = $2
+		$2.BeforeMethodCallParentheses = False
+		$2.BeforeConstructorDeclarationParentheses = False
+		$2.AfterDelegateDeclarationParameterComma = True
+		$2.NewParentheses = False
+		$2.SpacesBeforeBrackets = False
+		$2.inheritsSet = Mono
+		$2.inheritsScope = text/x-csharp
+		$2.scope = text/x-csharp
+	EndGlobalSection
+EndGlobal

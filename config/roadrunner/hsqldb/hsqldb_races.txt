@@ -1,0 +1,16 @@
+race Write PseudoJDBCBench.java:1112 Write dacapo/hsqldb/PseudoJDBCBench.java:1112
+race Write PseudoJDBCBench.java:1097 Read PseudoJDBCBench.java:1102
+race Write org/hsqldb/Record.java:85 Write Row.java:177
+race Write Record.java:85 Read Row.java:177
+race Read Record.java:85 Write Record.java:85
+race Read PseudoJDBCBench.java:1111 Write PseudoJDBCBench.java:1093
+race Write Record.java:85 Write org/hsqldb/Row.java:177
+race Write PseudoJDBCBench.java:1108 Write dacapo/hsqldb/PseudoJDBCBench.java:1093
+race Write org/hsqldb/Record.java:85 Write Record.java:85
+race Write PseudoJDBCBench.java:1093 Write dacapo/hsqldb/PseudoJDBCBench.java:1112
+race Write Row.java:177 Read Record.java:85
+race Read PseudoJDBCBench.java:1107 Write PseudoJDBCBench.java:1093
+race Write Row.java:177 Read Row.java:177
+race Write jdbcConnection.java:1017 Read jdbcConnection.java:1013
+race Write PseudoJDBCBench.java:1093 Write dacapo/hsqldb/PseudoJDBCBench.java:1108
+race Write PseudoJDBCBench.java:1112 Write dacapo/hsqldb/PseudoJDBCBench.java:1093

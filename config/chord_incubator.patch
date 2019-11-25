@@ -1,0 +1,834 @@
+diff --git a/runner.pl b/runner.pl
+index 3cd477a..3f3984c 100755
+--- a/runner.pl
++++ b/runner.pl
+@@ -30,6 +30,7 @@ my $boof_dir = "boofcv/benchmarks/";
+ # Map from program name to program directory relative to $pjbench_dir
+ my %benchmarks = (
+     "array_demo" => "array_demo",
++    "jspider" => "jspider",
+     "test_case" => "test_case",
+     "cache4j" => "cache4j",
+     "jdbm" => "jdbm",
+@@ -103,7 +104,7 @@ my %benchmarks = (
+ my @programs = keys %benchmarks;
+ 
+ my @analyses = ("thresc_hybrid", "thresc_metaback", "typestate_metaback","pointsto_libanalysis", "mustalias_libanalysis", "compotypestate", "typestate", "mustalias", "mustalias-td", "infernet", "compomustalias", "mustalias-tdbu","mustalias-bu", "cg-prune", "typeEnvCFA", "liboverlap", "composba", "composbaBaseline", "compoRTA", "compoCHA", "connection", "allocEnvCFA", "0cfa", "superopt", "allocEnvCFAClients", "kCFAClients", "provenance-instr", "print-polysite", "provenance-temp", "softanalysis", "provenance-kcfa", "provenance-kobj", "provenance-kobj-incre","provenance-kobj-composat", "provenance-kobj-compogen","provenance-typestate", "softrefine-kcfa", "kobj", "experiment", "mln-kobj", "mlnconvertor", "cpts_expt",
+-    "mln-kobj1", "mln-polysite-oracle", "mln-polysite-batch", "mln-polysite-inter", "mln-polysite-problem","mln-downcast-oracle", "mln-downcast-batch", "mln-downcast-problem", "mln-downcast-inter", "mln-polysite-precg-oracle", "mln-polysite-precg-problem","mln-downcast-precg-oracle", "mln-downcast-precg-problem","mln-datarace-oracle", "mln-pts-oracle", "mln-pts-woinit-oracle", "mln-datarace-batch", "mln-datarace-problem", "mln-datarace-inter", "mln-thresc-oracle", "mln-thresc-batch", "mln-thresc-inter", "incrsolver", "derivsz",
++    "mln-kobj1", "mln-polysite-oracle", "mln-polysite-batch", "mln-polysite-inter", "mln-polysite-problem","mln-downcast-oracle", "mln-downcast-batch", "mln-downcast-problem", "mln-downcast-inter", "mln-polysite-precg-oracle", "mln-polysite-precg-problem","mln-downcast-precg-oracle", "mln-downcast-precg-problem","mln-datarace-oracle", "mln-datarace-oracle-print", "mln-datarace-oracle-unsound", "mln-pts-oracle", "mln-pts-woinit-oracle", "mln-datarace-batch", "mln-datarace-problem", "mln-datarace-problem-unsound", "mln-datarace-inter", "mln-thresc-oracle", "mln-thresc-batch", "mln-thresc-inter", "incrsolver", "derivsz",
+     "dlogwrapper", "incr-dtreedumper", "incr-summgenerator", "incr-domcdumper", "incr-libaxiomdumper", "mln-infoflow-oracle", "mln-infoflow-problem", "mln-infoflow-batch", "mln-infoflow-inter", "nullderef-maxsat", "mln-nullderef-oracle", "mln-nullderef-problem", "mln-nullderef-batch", "c-cipa-0cfa", "c-cspa-kcfa","mln-cpts-batch","mln-cpts-oracle",
+     "mln-cipa-pts-learn", "mln-steensgaard-learn", "ursa-datarace-train");
+ 
+@@ -137,10 +138,12 @@ my %local_options_map = (
+     ],
+     "thresc_metaback" =>
+     [
++        "-Dchord.max.heap=16384m",
++        "-Dchord.bddbddb.max.heap=16384m",
+         "-Dchord.iter-thresc-java.optimize=false",
+         "-Dchord.iter-thresc-java.explode=1000",
+         "-Dchord.iter-thresc-java.disjuncts=5",
+-        "-Dchord.iter-thresc-java.timeout=600000",
++        "-Dchord.iter-thresc-java.timeout=300000",
+         "-Dchord.iter-thresc-java.iterlimit=100",
+         "-Dchord.iter-thresc-java.xmlToHtmlTask=thresc-xml2html",
+         "-Dchord.iter-thresc-java.jobpatch=100",
+@@ -148,15 +151,15 @@ my %local_options_map = (
+         "-Dchord.iter-thresc-java.prune=true",
+         "-Dchord.reflect.kind=dynamic",
+         "-Dchord.ssa.kind=nophi",
+-        "-Dchord.rhs.timeout=600000",
++        "-Dchord.rhs.timeout=300000",
+         "-Dchord.rhs.merge=pjoin",
+         "-Dchord.rhs.trace=shortest",
+-		#"-Dchord.reuse.scope=true",
+-		#"-Dchord.reflect.file=\${chord.work.dir}/reflect.txt",
+-		#"-Dchord.methods.file=\${chord.work.dir}/methods.txt",
++        "-Dchord.reuse.scope=true",
++        "-Dchord.reflect.file=\${chord.work.dir}/chord_output_mln-datarace-oracle/reflect.txt",
++        "-Dchord.methods.file=\${chord.work.dir}/chord_output_mln-datarace-oracle/methods.txt",
+         "-Dchord.run.analyses=queryE,cipa-0cfa-dlog,iter-thresc-java",
+         "-Dchord.scope.exclude=com.,sun.",
+-		#"-Dchord.check.exclude=java.,com.,sun.,sunw.,javax.,launcher.,org."
++        "-Dchord.check.exclude=java.,com.,sun.,sunw.,javax.,launcher."
+     ],
+     "typestate_metaback" =>
+     [
+@@ -1021,20 +1024,76 @@ my %local_options_map = (
+         "-Dchord.mln.programs=$mln_dir/learned/rev_or.mln,$mln_dir/learned/final_downcast_mifu.mln",
+         "-Dchord.max.heap=64g"
+     ],
++    "mln-datarace-oracle-print" =>
++    [
++        "-Dchord.check.exclude=java.,com.,sun.,sunw.,javax.,launcher.",
++        "-Dchord.max.heap=64g",
++        "-Dchord.bddbddb.max.heap=64g",
++        "-Dchord.reflect.exclude=true",
++        "-Dchord.reflect.kind=dynamic",
++        "-Dchord.reuse.scope=true",
++        "-Dchord.reflect.file=\${chord.work.dir}/chord_output_mln-datarace-oracle/reflect.txt",
++        "-Dchord.methods.file=\${chord.work.dir}/chord_output_mln-datarace-oracle/methods.txt",
++        "-Dchord.out.dir=\${chord.work.dir}/chord_output_mln-datarace-oracle-thresc-print",
++        "-Dchord.mln.useThrEsc=true",
++        "-Dchord.mln.threscFile=\${chord.work.dir}/proven_queries_mapped.txt",
++        "-Dchord.run.analyses=datarace-mln-gen,datarace-cs-printrep-java",
++        "-Dchord.scope.exclude=com.,sun.",
++        "-Dchord.mln.mode=oracle",
++        # see %bench_options_map for benchmark-specific modifications
++        "-Dchord.mln.nonpldiK=3",
++        "-Dchord.mln.pointer=kobj",
++        # see %bench_options_map for benchmark-specific modifications
++	"-Dchord.datarace.exclude.init=false",
++	"-Dchord.datarace.exclude.eqth=false",
++	"-Dchord.datarace.exclude.nongrded=true",
++	"-Dchord.datarace.exclude.typeflag=true",
++        # An example usage is given below. Benchmark specific values must be added in bench_options
++	#"-Dchord.datarace.exclude.type=PrioQElement,int[]",
++    ],
+     "mln-datarace-oracle" => 
+     [
+         "-Dchord.check.exclude=java.,com.,sun.,sunw.,javax.,launcher.",
+         "-Dchord.max.heap=64g",
+-        "-Dchord.bddbddb.max.heap=40g",
++        "-Dchord.bddbddb.max.heap=64g",
++        "-Dchord.reflect.exclude=true",
++        "-Dchord.reflect.kind=dynamic",
++        "-Dchord.reuse.scope=false",
++        "-Dchord.run.analyses=datarace-mln-gen",
++        "-Dchord.scope.exclude=com.,sun.",
++        "-Dchord.mln.mode=oracle",
++        # see %bench_options_map for benchmark-specific modifications
++        "-Dchord.mln.nonpldiK=3",
++        "-Dchord.mln.pointer=kobj",
++        # see %bench_options_map for benchmark-specific modifications
++	"-Dchord.datarace.exclude.init=false",
++	"-Dchord.datarace.exclude.eqth=false",
++	"-Dchord.datarace.exclude.nongrded=true",
++	"-Dchord.datarace.exclude.typeflag=true",
++        # An example usage is given below. Benchmark specific values must be added in bench_options
++	#"-Dchord.datarace.exclude.type=PrioQElement,int[]",
++    ],
++    "mln-datarace-oracle-unsound" =>
++    [
++        "-Dchord.check.exclude=java.,com.,sun.,sunw.,javax.,launcher.",
++        "-Dchord.max.heap=64g",
++        "-Dchord.bddbddb.max.heap=64g",
+         "-Dchord.reflect.exclude=true",
+         "-Dchord.reflect.kind=dynamic",
+         "-Dchord.reuse.scope=false",
+         "-Dchord.run.analyses=datarace-mln-gen",
+         "-Dchord.scope.exclude=com.,sun.",
+         "-Dchord.mln.mode=oracle",
++        # see %bench_options_map for benchmark-specific modifications
++        "-Dchord.mln.nonpldiK=3",
++        "-Dchord.mln.pointer=kobj",
++        # see %bench_options_map for benchmark-specific modifications
+ 	"-Dchord.datarace.exclude.init=true",
+ 	"-Dchord.datarace.exclude.eqth=true",
+-	"-Dchord.datarace.exclude.nongrded=false"
++	"-Dchord.datarace.exclude.nongrded=false",
++	"-Dchord.datarace.exclude.typeflag=true",
++        # An example usage is given below. Benchmark specific values must be added in bench_options
++	#"-Dchord.datarace.exclude.type=PrioQElement,int[]",
+     ],
+     "mln-datarace-batch" => 
+     [
+@@ -1059,6 +1118,32 @@ my %local_options_map = (
+     [
+         "-Dchord.check.exclude=java.,com.,sun.,sunw.,javax.,launcher.",
+         "-Dchord.max.heap=64g",
++        "-Dchord.bddbddb.max.heap=64g",
++        "-Dchord.reflect.exclude=true",
++        "-Dchord.reflect.kind=dynamic",
++        "-Dchord.reuse.scope=false",
++        "-Dchord.run.analyses=datarace-mln-gen",
++        "-Dchord.scope.exclude=com.,sun.",
++        "-Dchord.mln.mode=problem",
++        "-Dchord.mln.infWeight=58",
++        "-Dchord.mln.ratio=0.05,0.1,0.15,0.2,0.25",
++        "-Dchord.mln.consWeight=200",
++        "-Dchord.mln.solverPath=$mln_dir/mln.jar",
++        "-Dchord.mln.programs=$mln_dir/learned/rev_or.mln,$mln_dir/learned/final_datarace_mcsls.mln",
++        "-Dchord.mln.oraclePath=\${chord.work.dir}/chord_output_mln-datarace-oracle/oracle_queries.txt",
++        "-Dchord.reuse.scope=true",
++        "-Dchord.reflect.file=\${chord.work.dir}/chord_output_mln-datarace-oracle/reflect.txt",
++        "-Dchord.methods.file=\${chord.work.dir}/chord_output_mln-datarace-oracle/methods.txt",
++        # see %bench_options_map for benchmark-specific modifications
++	"-Dchord.datarace.exclude.init=false",
++	"-Dchord.datarace.exclude.eqth=false",
++	"-Dchord.datarace.exclude.nongrded=true",
++    ],
++    "mln-datarace-problem-unsound" =>
++    [
++        "-Dchord.check.exclude=java.,com.,sun.,sunw.,javax.,launcher.",
++        "-Dchord.max.heap=64g",
++        "-Dchord.bddbddb.max.heap=64g",
+         "-Dchord.reflect.exclude=true",
+         "-Dchord.reflect.kind=dynamic",
+         "-Dchord.reuse.scope=false",
+@@ -1070,9 +1155,14 @@ my %local_options_map = (
+         "-Dchord.mln.consWeight=200",
+         "-Dchord.mln.solverPath=$mln_dir/mln.jar",
+         "-Dchord.mln.programs=$mln_dir/learned/rev_or.mln,$mln_dir/learned/final_datarace_mcsls.mln",
++        "-Dchord.mln.oraclePath=\${chord.work.dir}/chord_output_mln-datarace-oracle/oracle_queries.txt",
++        "-Dchord.reuse.scope=true",
++        "-Dchord.reflect.file=\${chord.work.dir}/chord_output_mln-datarace-oracle/reflect.txt",
++        "-Dchord.methods.file=\${chord.work.dir}/chord_output_mln-datarace-oracle/methods.txt",
++        # see %bench_options_map for benchmark-specific modifications
+ 	"-Dchord.datarace.exclude.init=true",
+ 	"-Dchord.datarace.exclude.eqth=true",
+-	"-Dchord.datarace.exclude.nongrded=false"
++	"-Dchord.datarace.exclude.nongrded=false",
+     ],
+     "mln-datarace-inter" => 
+     [
+@@ -1444,7 +1534,81 @@ my %local_options_map = (
+ my %bench_options_map = (
+     "thresc_metaback" =>
+     {
+-        "elevator" => [ ]
++        "elevator" => [ ],
++        "xalan" => [
++             "-Dchord.iter-thresc-java.timeout=600000",
++             "-Dchord.rhs.timeout=600000",
++        ],
++    },
++    "mln-datarace-problem-unsound" =>
++    {
++        "tsp" => [ ],
++        "avrora" => [
++            "-Dchord.datarace.exclude.type=avrora.sim.InterruptTable,avrora.sim.radio.CC1000Radio\\\$CALRegister,avrora.sim.mcu.SPI,avrora.sim.util.TransactionalList\\\$Link,avrora.sim.RWRegister,avrora.sim.mcu.USART,avrora.sim.clock.RippleSynchronizer\\\$WaitLink,avrora.sim.mcu.ATMegaFamily\\\$Timer1,avrora.sim.mcu.ATMegaFamily\\\$Timer2,avrora.sim.radio.CC1000Radio\\\$SerialConfigurationInterface,avrora.sim.mcu.ReprogrammableCodeSegment\\\$SPMCSR_reg,avrora.sim.radio.Medium\\\$Probe\\\$List,avrora.sim.mcu.ATMegaFamily\\\$MaskRegister,avrora.sim.util.MulticastProbe,avrora.sim.radio.CC1000Radio\\\$MainRegister,avrora.sim.mcu.ATMegaFamily\\\$Timer0,avrora.arch.legacy.LegacyInterpreter,avrora.sim.mcu.ATMegaFamily\\\$FlagRegister,avrora.sim.FiniteStateMachine,avrora.arch.legacy.LegacyDisassembler,avrora.sim.clock.DeltaQueue\\\$Link,avrora.sim.mcu.EEPROM,avrora.sim.platform.ExternalFlash"
++        ],
++        "luindex" => [
++            "-Dchord.datarace.exclude.type=org.apache.lucene.index.TermsHashPerField,org.apache.lucene.index.RawPostingList[],byte[],org.apache.lucene.index.DocumentsWriter,org.apache.lucene.index.IndexWriter,org.apache.lucene.index.TermVectorsTermsWriter,org.apache.lucene.index.SegmentInfo,org.apache.lucene.index.MergePolicy\\\$OneMerge,org.apache.lucene.store.RAMOutputStream,org.apache.lucene.index.TermsHash"
++        ],
++        "sunflow" => [
++            "-Dchord.datarace.exclude.type=org.sunflow.image.Color,org.sunflow.core.accel.UniformGrid,org.sunflow.core.accel.BoundingIntervalHierarchy"
++        ],
++        "xalan" => [
++	          "-Dchord.datarace.exclude.type=org.apache.xpath.objects.XRTreeFrag,org.apache.xml.utils.StringVector,org.apache.xpath.axes.NodeSequence\\\$IteratorCache,org.apache.xpath.objects.XNumber,org.apache.xml.dtm.ref.ExpandedNameTable\\\$HashEntry[],org.apache.xpath.objects.XString,org.apache.xml.dtm.DTM[],org.apache.xml.dtm.ref.DTMDefaultBaseTraversers\\\$DescendantOrSelfTraverser,org.apache.xml.utils.IntVector,org.apache.xml.serializer.EncodingInfo\\\$EncodingImpl,org.apache.xpath.objects.XNull,org.apache.xpath.axes.WalkingIteratorSorted,org.apache.xml.serializer.ToHTMLStream,org.apache.xml.dtm.ref.sax2dtm.SAX2RTFDTM,byte[],org.apache.xml.serializer.SerializerTraceWriter,org.apache.xpath.objects.XNodeSet,org.apache.xml.serializer.ElemContext,org.apache.xml.utils.FastStringBuffer,org.apache.xpath.axes.OneStepIterator,org.apache.xml.serializer.ToXMLSAXHandler,org.apache.xml.dtm.ref.dom2dtm.DOM2DTM,org.apache.xml.dtm.ref.IncrementalSAXSource_Filter,org.apache.xml.serializer.WriterToUTF8Buffered,org.apache.xpath.NodeSetDTM,org.apache.xalan.transformer.TransformerImpl,org.apache.xpath.VariableStack,int[],org.apache.xpath.axes.FilterExprWalker,org.apache.xpath.axes.DescendantIterator,org.apache.xpath.XPathContext,org.apache.xpath.axes.WalkingIterator,org.xml.sax.helpers.ParserAdapter,org.apache.xml.utils.SuballocatedIntVector,java.lang.String[],org.apache.xpath.patterns.StepPattern,org.apache.xpath.objects.XObject[],org.apache.xml.utils.DOMBuilder,org.apache.xpath.axes.SelfIteratorNoPredicate,org.apache.xml.dtm.ref.sax2dtm.SAX2DTM,org.apache.xpath.axes.ReverseAxesWalker,org.apache.xml.serializer.AttributesImplSerializer,org.apache.xpath.axes.UnionPathIterator,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$PrecedingIterator,org.apache.xpath.axes.ChildTestIterator,org.apache.xpath.patterns.FunctionPattern,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$PrecedingSiblingIterator,org.apache.xml.utils.IntStack,org.apache.xml.utils.NodeVector,org.apache.xpath.axes.AxesWalker,org.apache.xpath.axes.OneStepIteratorForward,org.apache.xml.utils.ObjectStack,org.apache.xml.serializer.NamespaceMappings\\\$Stack,org.apache.xpath.axes.ChildIterator,org.apache.xpath.axes.UnionChildIterator,java.lang.Object[],org.apache.xml.serializer.ToStream\\\$BoolStack,org.apache.xpath.axes.AttributeIterator,org.apache.xml.utils.BoolStack,org.apache.xml.dtm.ref.ExpandedNameTable,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$AncestorIterator,boolean[],org.apache.xml.dtm.ref.CoroutineManager,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$DescendantIterator,org.xml.sax.helpers.NamespaceSupport\\\$Context,char[][],org.apache.xml.dtm.ref.DTMManagerDefault,org.apache.xpath.objects.XNodeSetForDOM"
++        ]
++    },
++    "mln-datarace-problem" =>
++    {
++        "tsp" => [ ],
++        "avrora" => [
++            "-Dchord.datarace.exclude.type=avrora.sim.InterruptTable,avrora.sim.radio.CC1000Radio\\\$CALRegister,avrora.sim.mcu.SPI,avrora.sim.util.TransactionalList\\\$Link,avrora.sim.RWRegister,avrora.sim.mcu.USART,avrora.sim.clock.RippleSynchronizer\\\$WaitLink,avrora.sim.mcu.ATMegaFamily\\\$Timer1,avrora.sim.mcu.ATMegaFamily\\\$Timer2,avrora.sim.radio.CC1000Radio\\\$SerialConfigurationInterface,avrora.sim.mcu.ReprogrammableCodeSegment\\\$SPMCSR_reg,avrora.sim.radio.Medium\\\$Probe\\\$List,avrora.sim.mcu.ATMegaFamily\\\$MaskRegister,avrora.sim.util.MulticastProbe,avrora.sim.radio.CC1000Radio\\\$MainRegister,avrora.sim.mcu.ATMegaFamily\\\$Timer0,avrora.arch.legacy.LegacyInterpreter,avrora.sim.mcu.ATMegaFamily\\\$FlagRegister,avrora.sim.FiniteStateMachine,avrora.arch.legacy.LegacyDisassembler,avrora.sim.clock.DeltaQueue\\\$Link,avrora.sim.mcu.EEPROM,avrora.sim.platform.ExternalFlash"
++        ],
++        "luindex" => [
++            "-Dchord.datarace.exclude.type=org.apache.lucene.index.TermsHashPerField,org.apache.lucene.index.RawPostingList[],byte[],org.apache.lucene.index.DocumentsWriter,org.apache.lucene.index.IndexWriter,org.apache.lucene.index.TermVectorsTermsWriter,org.apache.lucene.index.SegmentInfo,org.apache.lucene.index.MergePolicy\\\$OneMerge,org.apache.lucene.store.RAMOutputStream,org.apache.lucene.index.TermsHash"
++        ],
++        "sunflow" => [
++            "-Dchord.datarace.exclude.type=org.sunflow.image.Color,org.sunflow.core.accel.UniformGrid,org.sunflow.core.accel.BoundingIntervalHierarchy"
++        ],
++        "xalan" => [
++	          "-Dchord.datarace.exclude.type=org.apache.xpath.objects.XRTreeFrag,org.apache.xml.utils.StringVector,org.apache.xpath.axes.NodeSequence\\\$IteratorCache,org.apache.xpath.objects.XNumber,org.apache.xml.dtm.ref.ExpandedNameTable\\\$HashEntry[],org.apache.xpath.objects.XString,org.apache.xml.dtm.DTM[],org.apache.xml.dtm.ref.DTMDefaultBaseTraversers\\\$DescendantOrSelfTraverser,org.apache.xml.utils.IntVector,org.apache.xml.serializer.EncodingInfo\\\$EncodingImpl,org.apache.xpath.objects.XNull,org.apache.xpath.axes.WalkingIteratorSorted,org.apache.xml.serializer.ToHTMLStream,org.apache.xml.dtm.ref.sax2dtm.SAX2RTFDTM,byte[],org.apache.xml.serializer.SerializerTraceWriter,org.apache.xpath.objects.XNodeSet,org.apache.xml.serializer.ElemContext,org.apache.xml.utils.FastStringBuffer,org.apache.xpath.axes.OneStepIterator,org.apache.xml.serializer.ToXMLSAXHandler,org.apache.xml.dtm.ref.dom2dtm.DOM2DTM,org.apache.xml.dtm.ref.IncrementalSAXSource_Filter,org.apache.xml.serializer.WriterToUTF8Buffered,org.apache.xpath.NodeSetDTM,org.apache.xalan.transformer.TransformerImpl,org.apache.xpath.VariableStack,int[],org.apache.xpath.axes.FilterExprWalker,org.apache.xpath.axes.DescendantIterator,org.apache.xpath.XPathContext,org.apache.xpath.axes.WalkingIterator,org.xml.sax.helpers.ParserAdapter,org.apache.xml.utils.SuballocatedIntVector,java.lang.String[],org.apache.xpath.patterns.StepPattern,org.apache.xpath.objects.XObject[],org.apache.xml.utils.DOMBuilder,org.apache.xpath.axes.SelfIteratorNoPredicate,org.apache.xml.dtm.ref.sax2dtm.SAX2DTM,org.apache.xpath.axes.ReverseAxesWalker,org.apache.xml.serializer.AttributesImplSerializer,org.apache.xpath.axes.UnionPathIterator,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$PrecedingIterator,org.apache.xpath.axes.ChildTestIterator,org.apache.xpath.patterns.FunctionPattern,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$PrecedingSiblingIterator,org.apache.xml.utils.IntStack,org.apache.xml.utils.NodeVector,org.apache.xpath.axes.AxesWalker,org.apache.xpath.axes.OneStepIteratorForward,org.apache.xml.utils.ObjectStack,org.apache.xml.serializer.NamespaceMappings\\\$Stack,org.apache.xpath.axes.ChildIterator,org.apache.xpath.axes.UnionChildIterator,java.lang.Object[],org.apache.xml.serializer.ToStream\\\$BoolStack,org.apache.xpath.axes.AttributeIterator,org.apache.xml.utils.BoolStack,org.apache.xml.dtm.ref.ExpandedNameTable,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$AncestorIterator,boolean[],org.apache.xml.dtm.ref.CoroutineManager,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$DescendantIterator,org.xml.sax.helpers.NamespaceSupport\\\$Context,char[][],org.apache.xml.dtm.ref.DTMManagerDefault,org.apache.xpath.objects.XNodeSetForDOM"
++        ]
++    },
++    "mln-datarace-oracle-unsound" =>
++    {
++        "tsp" => [ ],
++        "avrora" => [
++            "-Dchord.datarace.exclude.type=avrora.sim.InterruptTable,avrora.sim.radio.CC1000Radio\\\$CALRegister,avrora.sim.mcu.SPI,avrora.sim.util.TransactionalList\\\$Link,avrora.sim.RWRegister,avrora.sim.mcu.USART,avrora.sim.clock.RippleSynchronizer\\\$WaitLink,avrora.sim.mcu.ATMegaFamily\\\$Timer1,avrora.sim.mcu.ATMegaFamily\\\$Timer2,avrora.sim.radio.CC1000Radio\\\$SerialConfigurationInterface,avrora.sim.mcu.ReprogrammableCodeSegment\\\$SPMCSR_reg,avrora.sim.radio.Medium\\\$Probe\\\$List,avrora.sim.mcu.ATMegaFamily\\\$MaskRegister,avrora.sim.util.MulticastProbe,avrora.sim.radio.CC1000Radio\\\$MainRegister,avrora.sim.mcu.ATMegaFamily\\\$Timer0,avrora.arch.legacy.LegacyInterpreter,avrora.sim.mcu.ATMegaFamily\\\$FlagRegister,avrora.sim.FiniteStateMachine,avrora.arch.legacy.LegacyDisassembler,avrora.sim.clock.DeltaQueue\\\$Link,avrora.sim.mcu.EEPROM,avrora.sim.platform.ExternalFlash"
++        ],
++        "luindex" => [
++            "-Dchord.datarace.exclude.type=org.apache.lucene.index.TermsHashPerField,org.apache.lucene.index.RawPostingList[],byte[],org.apache.lucene.index.DocumentsWriter,org.apache.lucene.index.IndexWriter,org.apache.lucene.index.TermVectorsTermsWriter,org.apache.lucene.index.SegmentInfo,org.apache.lucene.index.MergePolicy\\\$OneMerge,org.apache.lucene.store.RAMOutputStream,org.apache.lucene.index.TermsHash"
++        ],
++        "sunflow" => [
++            "-Dchord.datarace.exclude.type=org.sunflow.image.Color,org.sunflow.core.accel.UniformGrid,org.sunflow.core.accel.BoundingIntervalHierarchy"
++        ],
++        "hsqldb" => [
++             "-Dchord.mln.nonpldiK=2",
++        ],
++        "xalan" => [
++	          "-Dchord.datarace.exclude.type=org.apache.xpath.objects.XRTreeFrag,org.apache.xml.utils.StringVector,org.apache.xpath.axes.NodeSequence\\\$IteratorCache,org.apache.xpath.objects.XNumber,org.apache.xml.dtm.ref.ExpandedNameTable\\\$HashEntry[],org.apache.xpath.objects.XString,org.apache.xml.dtm.DTM[],org.apache.xml.dtm.ref.DTMDefaultBaseTraversers\\\$DescendantOrSelfTraverser,org.apache.xml.utils.IntVector,org.apache.xml.serializer.EncodingInfo\\\$EncodingImpl,org.apache.xpath.objects.XNull,org.apache.xpath.axes.WalkingIteratorSorted,org.apache.xml.serializer.ToHTMLStream,org.apache.xml.dtm.ref.sax2dtm.SAX2RTFDTM,byte[],org.apache.xml.serializer.SerializerTraceWriter,org.apache.xpath.objects.XNodeSet,org.apache.xml.serializer.ElemContext,org.apache.xml.utils.FastStringBuffer,org.apache.xpath.axes.OneStepIterator,org.apache.xml.serializer.ToXMLSAXHandler,org.apache.xml.dtm.ref.dom2dtm.DOM2DTM,org.apache.xml.dtm.ref.IncrementalSAXSource_Filter,org.apache.xml.serializer.WriterToUTF8Buffered,org.apache.xpath.NodeSetDTM,org.apache.xalan.transformer.TransformerImpl,org.apache.xpath.VariableStack,int[],org.apache.xpath.axes.FilterExprWalker,org.apache.xpath.axes.DescendantIterator,org.apache.xpath.XPathContext,org.apache.xpath.axes.WalkingIterator,org.xml.sax.helpers.ParserAdapter,org.apache.xml.utils.SuballocatedIntVector,java.lang.String[],org.apache.xpath.patterns.StepPattern,org.apache.xpath.objects.XObject[],org.apache.xml.utils.DOMBuilder,org.apache.xpath.axes.SelfIteratorNoPredicate,org.apache.xml.dtm.ref.sax2dtm.SAX2DTM,org.apache.xpath.axes.ReverseAxesWalker,org.apache.xml.serializer.AttributesImplSerializer,org.apache.xpath.axes.UnionPathIterator,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$PrecedingIterator,org.apache.xpath.axes.ChildTestIterator,org.apache.xpath.patterns.FunctionPattern,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$PrecedingSiblingIterator,org.apache.xml.utils.IntStack,org.apache.xml.utils.NodeVector,org.apache.xpath.axes.AxesWalker,org.apache.xpath.axes.OneStepIteratorForward,org.apache.xml.utils.ObjectStack,org.apache.xml.serializer.NamespaceMappings\\\$Stack,org.apache.xpath.axes.ChildIterator,org.apache.xpath.axes.UnionChildIterator,java.lang.Object[],org.apache.xml.serializer.ToStream\\\$BoolStack,org.apache.xpath.axes.AttributeIterator,org.apache.xml.utils.BoolStack,org.apache.xml.dtm.ref.ExpandedNameTable,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$AncestorIterator,boolean[],org.apache.xml.dtm.ref.CoroutineManager,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$DescendantIterator,org.xml.sax.helpers.NamespaceSupport\\\$Context,char[][],org.apache.xml.dtm.ref.DTMManagerDefault,org.apache.xpath.objects.XNodeSetForDOM"
++        ]
++    },
++    "mln-datarace-oracle" =>
++    {
++        "tsp" => [ ],
++        "avrora" => [
++            "-Dchord.datarace.exclude.type=avrora.sim.InterruptTable,avrora.sim.radio.CC1000Radio\\\$CALRegister,avrora.sim.mcu.SPI,avrora.sim.util.TransactionalList\\\$Link,avrora.sim.RWRegister,avrora.sim.mcu.USART,avrora.sim.clock.RippleSynchronizer\\\$WaitLink,avrora.sim.mcu.ATMegaFamily\\\$Timer1,avrora.sim.mcu.ATMegaFamily\\\$Timer2,avrora.sim.radio.CC1000Radio\\\$SerialConfigurationInterface,avrora.sim.mcu.ReprogrammableCodeSegment\\\$SPMCSR_reg,avrora.sim.radio.Medium\\\$Probe\\\$List,avrora.sim.mcu.ATMegaFamily\\\$MaskRegister,avrora.sim.util.MulticastProbe,avrora.sim.radio.CC1000Radio\\\$MainRegister,avrora.sim.mcu.ATMegaFamily\\\$Timer0,avrora.arch.legacy.LegacyInterpreter,avrora.sim.mcu.ATMegaFamily\\\$FlagRegister,avrora.sim.FiniteStateMachine,avrora.arch.legacy.LegacyDisassembler,avrora.sim.clock.DeltaQueue\\\$Link,avrora.sim.mcu.EEPROM,avrora.sim.platform.ExternalFlash"
++        ],
++        "luindex" => [
++            "-Dchord.datarace.exclude.type=org.apache.lucene.index.TermsHashPerField,org.apache.lucene.index.RawPostingList[],byte[],org.apache.lucene.index.DocumentsWriter,org.apache.lucene.index.IndexWriter,org.apache.lucene.index.TermVectorsTermsWriter,org.apache.lucene.index.SegmentInfo,org.apache.lucene.index.MergePolicy\\\$OneMerge,org.apache.lucene.store.RAMOutputStream,org.apache.lucene.index.TermsHash"
++        ],
++        "sunflow" => [
++            "-Dchord.datarace.exclude.type=org.sunflow.image.Color,org.sunflow.core.accel.UniformGrid,org.sunflow.core.accel.BoundingIntervalHierarchy"
++        ],
++        "hsqldb" => [
++             "-Dchord.mln.nonpldiK=2",
++        ],
++        "xalan" => [
++	          "-Dchord.datarace.exclude.type=org.apache.xpath.objects.XRTreeFrag,org.apache.xml.utils.StringVector,org.apache.xpath.axes.NodeSequence\\\$IteratorCache,org.apache.xpath.objects.XNumber,org.apache.xml.dtm.ref.ExpandedNameTable\\\$HashEntry[],org.apache.xpath.objects.XString,org.apache.xml.dtm.DTM[],org.apache.xml.dtm.ref.DTMDefaultBaseTraversers\\\$DescendantOrSelfTraverser,org.apache.xml.utils.IntVector,org.apache.xml.serializer.EncodingInfo\\\$EncodingImpl,org.apache.xpath.objects.XNull,org.apache.xpath.axes.WalkingIteratorSorted,org.apache.xml.serializer.ToHTMLStream,org.apache.xml.dtm.ref.sax2dtm.SAX2RTFDTM,byte[],org.apache.xml.serializer.SerializerTraceWriter,org.apache.xpath.objects.XNodeSet,org.apache.xml.serializer.ElemContext,org.apache.xml.utils.FastStringBuffer,org.apache.xpath.axes.OneStepIterator,org.apache.xml.serializer.ToXMLSAXHandler,org.apache.xml.dtm.ref.dom2dtm.DOM2DTM,org.apache.xml.dtm.ref.IncrementalSAXSource_Filter,org.apache.xml.serializer.WriterToUTF8Buffered,org.apache.xpath.NodeSetDTM,org.apache.xalan.transformer.TransformerImpl,org.apache.xpath.VariableStack,int[],org.apache.xpath.axes.FilterExprWalker,org.apache.xpath.axes.DescendantIterator,org.apache.xpath.XPathContext,org.apache.xpath.axes.WalkingIterator,org.xml.sax.helpers.ParserAdapter,org.apache.xml.utils.SuballocatedIntVector,java.lang.String[],org.apache.xpath.patterns.StepPattern,org.apache.xpath.objects.XObject[],org.apache.xml.utils.DOMBuilder,org.apache.xpath.axes.SelfIteratorNoPredicate,org.apache.xml.dtm.ref.sax2dtm.SAX2DTM,org.apache.xpath.axes.ReverseAxesWalker,org.apache.xml.serializer.AttributesImplSerializer,org.apache.xpath.axes.UnionPathIterator,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$PrecedingIterator,org.apache.xpath.axes.ChildTestIterator,org.apache.xpath.patterns.FunctionPattern,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$PrecedingSiblingIterator,org.apache.xml.utils.IntStack,org.apache.xml.utils.NodeVector,org.apache.xpath.axes.AxesWalker,org.apache.xpath.axes.OneStepIteratorForward,org.apache.xml.utils.ObjectStack,org.apache.xml.serializer.NamespaceMappings\\\$Stack,org.apache.xpath.axes.ChildIterator,org.apache.xpath.axes.UnionChildIterator,java.lang.Object[],org.apache.xml.serializer.ToStream\\\$BoolStack,org.apache.xpath.axes.AttributeIterator,org.apache.xml.utils.BoolStack,org.apache.xml.dtm.ref.ExpandedNameTable,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$AncestorIterator,boolean[],org.apache.xml.dtm.ref.CoroutineManager,org.apache.xml.dtm.ref.DTMDefaultBaseIterators\\\$DescendantIterator,org.xml.sax.helpers.NamespaceSupport\\\$Context,char[][],org.apache.xml.dtm.ref.DTMManagerDefault,org.apache.xpath.objects.XNodeSetForDOM"
++        ]
+     },
+     "pointsto_libanalysis" =>
+     {
+diff --git a/src/chord/analyses/absmin/AbstractionMinimizer.java b/src/chord/analyses/absmin/AbstractionMinimizer.java
+index 41a1e5f..c6b22cc 100755
+--- a/src/chord/analyses/absmin/AbstractionMinimizer.java
++++ b/src/chord/analyses/absmin/AbstractionMinimizer.java
+@@ -387,6 +387,8 @@ public class AbstractionMinimizer implements JobDispatcher {
+ 		EX.flushOutput();
+ 	}
+ 
++        public void saveInterimState() {}
++
+ 	/**
+ 	 * Save groups information to disk in raw as well as XML format. If xmlToHtmlTask is not null, also generate HTML format file
+ 	 */
+diff --git a/src/chord/analyses/datarace/cs/datarace_cs_init.dlog b/src/chord/analyses/datarace/cs/datarace_cs_init.dlog
+index 4581a1a..881ba66 100755
+--- a/src/chord/analyses/datarace/cs/datarace_cs_init.dlog
++++ b/src/chord/analyses/datarace/cs/datarace_cs_init.dlog
+@@ -34,12 +34,12 @@ EF(e:E0,f:F0) input
+ reachableACM(t:AS0,c:C0,m:M0) input
+ checkExcludedM(m:M0) input
+ 
+-excludeInitM(m:M0)
+-relevantTCM(t:AS0,c:C0,m:M0)
+-relevantTCE(t:AS0,c:C0,e:E0)
++excludeInitM(m:M0) output
++relevantTCM(t:AS0,c:C0,m:M0) output
++relevantTCE(t:AS0,c:C0,e:E0) output
+ 
+-rdOrWrTCEF(t:AS0,c:C0,e:E0,f:F0)
+-onlyWrTCEF(t:AS0,c:C0,e:E0,f:F0)
++rdOrWrTCEF(t:AS0,c:C0,e:E0,f:F0) output
++onlyWrTCEF(t:AS0,c:C0,e:E0,f:F0) output
+ 
+ ###
+ 
+@@ -48,9 +48,10 @@ unlockedE_cs(t:AS0,c1:C0,e:E0,c2:C1) input
+ 
+ ###
+ 
+-unlikelyRaceHext(t1:AS0,c1:C0,e1:E0,t2:AS1,c2:C1,e2:E1)
+-startingRaceHext(t1:AS0,c1:C0,e1:E0,t2:AS1,c2:C1,e2:E1)
++unlikelyRaceHext(t1:AS0,c1:C0,e1:E0,t2:AS1,c2:C1,e2:E1) output
++startingRaceHext(t1:AS0,c1:C0,e1:E0,t2:AS1,c2:C1,e2:E1) output
+ unlockedRaceHext(t1:AS0,c1:C0,e1:E0,t2:AS1,c2:C1,e2:E1) output
++guardedE(t:AS0,c:C0,e:E0,o:C1) output
+ 
+ ###
+ # Constraints
+diff --git a/src/chord/analyses/datarace/cs/datarace_cs_noneg.dlog b/src/chord/analyses/datarace/cs/datarace_cs_noneg.dlog
+index e0774d0..011bdca 100755
+--- a/src/chord/analyses/datarace/cs/datarace_cs_noneg.dlog
++++ b/src/chord/analyses/datarace/cs/datarace_cs_noneg.dlog
+@@ -15,8 +15,9 @@
+ .include "K.dom"
+ .include "C.dom"
+ .include "I.dom"
++.include "T.dom"
+ 
+-.bddvarorder L0_F0_E0_E1_M0_AS0xAS1_H0_K0_C0xC1xC2_I0
++.bddvarorder L0_F0_E0_E1_M0_AS0xAS1_K0_C0xC1xC2_I0_H0_T1
+ 
+ ###
+ # Relations
+@@ -26,10 +27,12 @@ unlockedRaceHext(t1:AS0,c1:C0,e1:E0,t2:AS1,c2:C1,e2:E1) input
+ 
+ ###
+ 
++CH(c0:C0,h:H0) input
++HT(h:H0,t:T1) input
+ EF(e:E0,f:F0) input
+ statF(f:F0) input
+ statE(e:E0)
+-CEC(c:C0,e:E0,o:C1) input		
++CEC(c:C0,e:E0,o:C1) input
+ escapingRaceHext(t1:AS0,c1:C0,e1:E0,t2:AS1,c2:C1,e2:E1) output
+ 
+ ###
+@@ -40,8 +43,11 @@ parallelRaceHext(t1:AS0,c1:C0,e1:E0,t2:AS1,c2:C1,e2:E1) output
+ ###
+ 
+ excludeSameThread(k:K0) input
++excludeTypeFlag(k:K0) input
++excludeType(t:T1) input
+ datarace(t1:AS0,c1:C0,e1:E0,t2:AS1,c2:C1,e2:E1) output
+ racePairs_cs(e1:E0,e2:E1) output
++racePairsHT_cs(e1:E0,e2:E1,h:H0,t:T1) output
+ 
+ ###
+ # Constraints
+@@ -64,6 +70,9 @@ parallelRaceHext(t1,c1,e1,t2,c2,e2) :- escapingRaceHext(t1,c1,e1,t2,c2,e2), \
+ datarace(t1,c1,e1,t2,c2,e2) :- parallelRaceHext(t1,c1,e1,t2,c2,e2), excludeSameThread(1), t1!=t2.
+ datarace(t1,c1,e1,t2,c2,e2) :- parallelRaceHext(t1,c1,e1,t2,c2,e2), excludeSameThread(0).
+ 
++racePairsHT_cs(e1,e2,h,t) :- datarace(_,c1,e1,_,c2,e2), CEC(c1,e1,o), CEC(c2,e2,o), CH(o,h), HT(h,t).
+ 
+-racePairs_cs(e1,e2) :- datarace(_,_,e1,_,_,e2).
++racePairs_cs(e1,e2) :- datarace(_,_,e1,_,_,e2), excludeTypeFlag(0).
++racePairs_cs(e1,e2) :- datarace(_,_,e1,_,_,e2), excludeTypeFlag(1), statE(e1), statE(e2).
++racePairs_cs(e1,e2) :- racePairsHT_cs(e1,e2,_,t), excludeTypeFlag(1), !excludeType(t).
+ 
+diff --git a/src/chord/analyses/mln/MLNAnalysisDriver.java b/src/chord/analyses/mln/MLNAnalysisDriver.java
+index efb15e5..1317c65 100644
+--- a/src/chord/analyses/mln/MLNAnalysisDriver.java
++++ b/src/chord/analyses/mln/MLNAnalysisDriver.java
+@@ -24,8 +24,14 @@ import chord.project.analyses.JavaAnalysis;
+ import chord.project.analyses.ProgramDom;
+ import chord.project.analyses.ProgramRel;
+ import chord.project.analyses.provenance.Tuple;
++import chord.project.OutDirUtils;
++import chord.util.tuple.object.Pair;
++import chord.util.tuple.object.Hext;
+ import jwutil.collections.Tuples;
+ 
++import joeq.Compiler.Quad.Quad;
++import joeq.Class.jq_Type;
++
+ /**
+  * -Dchord.mln.client=downcast -Dchord.mln.edbweight=-1/-2/
+  * <weight> -Dchord.mln.infWeight -Dchord.mln.withProvenance
+@@ -62,6 +68,7 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 	protected Set<Integer> revorDomain;
+ 	protected RevConstraintGenerator revGen = null;
+ 	protected boolean areCurrentRelsOracle = false;
++	protected boolean runningBase = true;
+ 	private String classifierPath = null;
+ 	
+ 	protected abstract Set<String> getDerivedRelations();
+@@ -368,7 +375,7 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 						negFeedback.add(fTuple);
+ 					}
+ 					for (Tuple t : negFeedback) {
+-						pw.println(infFeedbackWeight + ": NOT " + t);
++						pw.println(infFeedbackWeight + " !" + t);
+ 					}
+ 
+ 					rand = new Random(System.currentTimeMillis());
+@@ -377,7 +384,7 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 						posFeedback.add(fTuple);
+ 					}
+ 					for (Tuple t : posFeedback) {
+-						pw.println(infFeedbackWeight + ": " + t);
++						pw.println(infFeedbackWeight + " " + t);
+ 					}
+ 					pw.flush();
+ 					pw.close();
+@@ -414,10 +421,10 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 						}
+ 					}
+ 					for (Tuple t : negFeedback) {
+-						pw.println(infFeedbackWeight + ": NOT " + t);
++						pw.println(infFeedbackWeight + " !" + t);
+ 					}
+ 					for (Tuple t : posFeedback) {
+-						pw.println(infFeedbackWeight + ": " + t);
++						pw.println(infFeedbackWeight + " " + t);
+ 					}
+ 
+ 					pw.flush();
+@@ -477,7 +484,7 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 						negFeedback.add(fTuple);
+ 					}
+ 					for (Tuple t : negFeedback) {
+-						pw.println(infFeedbackWeight + ": NOT " + t);
++						pw.println(infFeedbackWeight + " !" + t);
+ 					}
+ 
+ 					rand = new Random(System.currentTimeMillis());
+@@ -509,7 +516,7 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 						}
+ 					}
+ 					for (Tuple t : posFeedback) {
+-						pw.println(infFeedbackWeight + ": " + t);
++						pw.println(infFeedbackWeight + " " + t);
+ 					}
+ 					pw.flush();
+ 					pw.close();
+@@ -583,10 +590,10 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 						}
+ 					}
+ 					for (Tuple t : negFeedback) {
+-						pw.println(infFeedbackWeight + ": NOT " + t);
++						pw.println(infFeedbackWeight + " !" + t);
+ 					}
+ 					for (Tuple t : posFeedback) {
+-						pw.println(infFeedbackWeight + ": " + t);
++						pw.println(infFeedbackWeight + " " + t);
+ 					}
+ 
+ 					pw.flush();
+@@ -659,7 +666,7 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 						negFeedback.add(fTuple);
+ 					}
+ 					for (Tuple t : negFeedback) {
+-						pw.println(infFeedbackWeight + ": NOT " + t);
++						pw.println(infFeedbackWeight + " !" + t);
+ 					}
+ 
+ 					rand = new Random(System.currentTimeMillis());
+@@ -674,7 +681,7 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 						}
+ 					}
+ 					for (Tuple t : posFeedback) {
+-						pw.println(infFeedbackWeight + ": " + t);
++						pw.println(infFeedbackWeight + " " + t);
+ 					}
+ 					pw.flush();
+ 					pw.close();
+@@ -716,10 +723,10 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 						}
+ 					}
+ 					for (Tuple t : negFeedback) {
+-						pw.println(infFeedbackWeight + ": NOT " + t);
++						pw.println(infFeedbackWeight + " !" + t);
+ 					}
+ 					for (Tuple t : posFeedback) {
+-						pw.println(infFeedbackWeight + ": " + t);
++						pw.println(infFeedbackWeight + " " + t);
+ 					}
+ 
+ 					pw.flush();
+@@ -769,7 +776,7 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 					negTuples.add(fTuple);
+ 				}
+ 				for (Tuple t : negTuples) {
+-					pw.println(infFeedbackWeight + ": NOT " + t);
++					pw.println(infFeedbackWeight + " !" + t);
+ 				}
+ 
+ 				rand = new Random(System.currentTimeMillis());
+@@ -800,7 +807,7 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 					}
+ 				}
+ 				for (Tuple t : posTuples) {
+-					pw.println(infFeedbackWeight + ": " + t);
++					pw.println(infFeedbackWeight + " " + t);
+ 				}
+ 				pw.flush();
+ 				pw.close();
+@@ -857,10 +864,10 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 					}
+ 				}
+ 				for (Tuple t : negTuples) {
+-					pw.println(infFeedbackWeight + ": NOT " + t);
++					pw.println(infFeedbackWeight + " !" + t);
+ 				}
+ 				for (Tuple t : posTuples) {
+-					pw.println(infFeedbackWeight + ": " + t);
++					pw.println(infFeedbackWeight + " " + t);
+ 				}
+ 
+ 				pw.flush();
+@@ -964,6 +971,59 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 		pw.println(sb);
+ 	}
+ 
++	protected void generateNamedGroundedConstraints(String constraintFileName, String dictFileName) {
++		try {
++			PrintWriter constraintFile = new PrintWriter(new File(constraintFileName));
++			PrintWriter dictFile = new PrintWriter(new File(dictFileName));
++			List<LookUpRule> rules = this.getRules();
++			for (int i = 0; i < rules.size(); i++) {
++				LookUpRule rule = rules.get(i);
++				String name = "R" + Integer.toString(i);
++				dictFile.println(name + ": " + rule.toString());
++				Iterator<ConstraintItem> iter = rule.getAllConstrIterator();
++				while (iter.hasNext()) {
++					this.printNamedConstraint(constraintFile, name, iter.next());
++				}
++			}
++			constraintFile.flush();
++			constraintFile.close();
++			dictFile.flush();
++			dictFile.close();
++		} catch (FileNotFoundException e) {
++			throw new RuntimeException(e);
++		}
++	}
++
++	protected void printNamedConstraint(PrintWriter pw, String name, ConstraintItem ci) {
++		StringBuilder sb = new StringBuilder();
++		sb.append(name + ": ");
++
++		// Order in which predicates appear in the ground clause should be same
++		// as the order
++		// in which they appear in the corresponding MLN rule in the mln file.
++		// This is because
++		// the MLN solver expects the predicates in the ground clauses to appear
++		// in the same order.
++		for (int i = 0; i < ci.getSubTuples().size(); ++i) {
++			Tuple sub = ci.getSubTuples().get(i);
++			Boolean sign = ci.getSubTuplesSign().get(i);
++			if (sign) {
++				sb.append("NOT ");
++			}
++			sb.append(sub.toString());
++			sb.append(", ");
++		}
++
++		Tuple head = ci.getHeadTuple();
++		Boolean headSign = ci.getHeadTupleSign();
++		if (!headSign) {
++			sb.append("NOT ");
++		}
++		sb.append(head.toString());
++
++		pw.println(sb);
++	}
++
+ 	protected void printRevertedConstraint(PrintWriter pw, ConstraintItem ci) {
+ 		Tuple head = ci.getHeadTuple();
+ 		for (int i = 0; i < ci.getSubTuples().size(); ++i) {
+@@ -1209,8 +1269,11 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 		
+ 		revorDomain = new HashSet<Integer>();
+ 		this.readSettings();
++		if (this.mode == Mode.ORACLE) runningBase = true;
+ 		this.genTasks();
+ 		this.runBaseCase();
++		if (this.mode == Mode.ORACLE) runningBase = false;
++		this.genTasks();
+ 		
+ 		if(this.classifierPath != null){
+ 			Set<ConstraintItem> provenance = new HashSet<ConstraintItem>();
+@@ -1236,8 +1299,10 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 				this.generateScope(Config.outDirName + File.separator + "base_scope.edb");
+ 				this.generateAppScope(Config.outDirName+File.separator+"app_base_scope.edb");
+ 				this.generateScopeVerbose(Config.outDirName + File.separator + "base_scope_verbose.edb");
+-				this.generateGroundedConstraints(Config.outDirName + File.separator + "cons_all.txt");
+ 			}
++			//this.generateGroundedConstraints(Config.outDirName + File.separator + "cons_all.txt");
++			//this.generateNamedGroundedConstraints(Config.outDirName + File.separator + "named_cons_all.txt",
++					//Config.outDirName + File.separator + "rule_dict.txt");
+ 			Set<Tuple> baseTuples = this.loadTuples(true);
+ 			Set<Tuple> baseTuplesEDB = this.loadTuples(false);
+ 			this.runOracle();
+@@ -1255,6 +1320,8 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 			}
+ 		} else {
+ 			this.generateGroundedConstraints(Config.outDirName + File.separator + "cons_all.txt");
++			this.generateNamedGroundedConstraints(Config.outDirName + File.separator + "named_cons_all.txt",
++					Config.outDirName + File.separator + "rule_dict.txt");
+ 			this.generateRevertedConstraints(Config.outDirName + File.separator + "reverted_cons_all.txt",
+ 					base_queries);
+ 
+@@ -1345,6 +1412,114 @@ public abstract class MLNAnalysisDriver extends JavaAnalysis {
+ 				}
+ 			}
+ 		}
+-	}
+ 
++                String printDir = null;
++                String suffix = "";
++                ProgramRel rel;
++                printDir = System.getProperty("chord.printrel.dir", Config.outDirName);
++                System.out.println("Printing relations in: " + printDir);
++                suffix = System.getProperty("chord.printrel.suffix", "");
++                String relName = "";
++                PrintWriter outFile = null;
++                ProgramDom<?> domE = (ProgramDom<?>)ClassicProject.g().getTrgt("E");
++                ProgramDom<?> domH = (ProgramDom<?>)ClassicProject.g().getTrgt("H");
++                ProgramDom<?> domT = (ProgramDom<?>)ClassicProject.g().getTrgt("T");
++
++                relName = "racePairs_cs";
++                outFile = OutDirUtils.newPrintWriter(relName + suffix + ".txt");
++                rel = (ProgramRel) ClassicProject.g().getTrgt(relName);
++                rel.load();
++                Iterable<Pair<Quad, Quad>> tuplesRp = rel.getAry2ValTuples();
++                for (Pair<Quad, Quad> t : tuplesRp){
++                        int t0 = domE.indexOf(t.val0);
++                        outFile.print(t0 + ":" + ((Quad)t.val0).toJavaLocStr());
++                        outFile.print("  ");
++                        int t1 = domE.indexOf(t.val1);
++                        outFile.println(t1 + ":" + ((Quad)t.val1).toJavaLocStr());
++                }
++                rel.close();
++                outFile.close();
++
++                relName = "escE";
++                outFile = OutDirUtils.newPrintWriter(relName + suffix + ".txt");
++                rel = (ProgramRel) ClassicProject.g().getTrgt(relName);
++                rel.load();
++                Iterable<Quad> tuplesEsc = rel.getAry1ValTuples();
++                for (Quad e : tuplesEsc){
++                        int t0 = domE.indexOf(e);
++                        outFile.println(t0 + ":" + e.toJavaLocStr());
++                }
++                rel.close();
++                outFile.close();
++
++		if (this.mode == Mode.ORACLE) {
++			relName = "racePairsHT_cs";
++			outFile = OutDirUtils.newPrintWriter(relName + suffix + ".txt");
++			rel = (ProgramRel) ClassicProject.g().getTrgt(relName);
++			rel.load();
++			Iterable<chord.util.tuple.object.Quad<Quad, Quad, Quad, jq_Type>> tuplesRPHT = rel.getAry4ValTuples();
++			for (chord.util.tuple.object.Quad<Quad, Quad, Quad, jq_Type> t : tuplesRPHT){
++				int t0 = domE.indexOf(t.val0);
++				outFile.print(t0 + ":" + ((Quad)t.val0).toJavaLocStr());
++				outFile.print("  ");
++				int t1 = domE.indexOf(t.val1);
++				outFile.print(t1 + ":" + ((Quad)t.val1).toJavaLocStr());
++				outFile.print("  ");
++				int t2 = domH.indexOf(t.val2);
++				outFile.print(t2 + ":" + ((Quad)t.val2).toJavaLocStr());
++				outFile.print("  ");
++				int t3 = domT.indexOf(t.val3);
++				outFile.println(t3 + ":" + ((jq_Type)t.val3).toString());
++			}
++			rel.close();
++			outFile.close();
++		}
++
++                /****************** uncomment for debugging
++                relName = "unlockedRaceHext";
++                outFile = OutDirUtils.newPrintWriter(relName + suffix + ".txt");
++                rel = (ProgramRel) ClassicProject.g().getTrgt(relName);
++                rel.load();
++                Iterable<Hext<Object, Object, Quad, Object, Object, Quad>> tuplesUR = rel.getAry6ValTuples();
++                for (Hext<Object, Object, Quad, Object, Object, Quad> t : tuplesUR){
++                        int t0 = domE.indexOf(t.val2);
++                        outFile.print(t0 + ":" + ((Quad)t.val2).toJavaLocStr());
++                        outFile.print("  ");
++                        int t1 = domE.indexOf(t.val5);
++                        outFile.println(t1 + ":" + ((Quad)t.val5).toJavaLocStr());
++                }
++                rel.close();
++                outFile.close();
++
++                relName = "escapingRaceHext";
++                outFile = OutDirUtils.newPrintWriter(relName + suffix + ".txt");
++                rel = (ProgramRel) ClassicProject.g().getTrgt(relName);
++                rel.load();
++                Iterable<Hext<Object, Object, Quad, Object, Object, Quad>> tuplesER = rel.getAry6ValTuples();
++                for (Hext<Object, Object, Quad, Object, Object, Quad> t : tuplesER){
++                        int t0 = domE.indexOf(t.val2);
++                        outFile.print(t0 + ":" + ((Quad)t.val2).toJavaLocStr());
++                        outFile.print("  ");
++                        int t1 = domE.indexOf(t.val5);
++                        outFile.println(t1 + ":" + ((Quad)t.val5).toJavaLocStr());
++                }
++                rel.close();
++                outFile.close();
++
++                relName = "parallelRaceHext";
++                outFile = OutDirUtils.newPrintWriter(relName + suffix + ".txt");
++                rel = (ProgramRel) ClassicProject.g().getTrgt(relName);
++                rel.load();
++                Iterable<Hext<Object, Object, Quad, Object, Object, Quad>> tuplesPR = rel.getAry6ValTuples();
++                for (Hext<Object, Object, Quad, Object, Object, Quad> t : tuplesPR){
++                        int t0 = domE.indexOf(t.val2);
++                        outFile.print(t0 + ":" + ((Quad)t.val2).toJavaLocStr());
++                        outFile.print("  ");
++                        int t1 = domE.indexOf(t.val5);
++                        outFile.println(t1 + ":" + ((Quad)t.val5).toJavaLocStr());
++                }
++                rel.close();
++                outFile.close();
++                *************************/
++	}
+ }
+diff --git a/src/chord/analyses/mln/datarace/MLNDataraceDriver.java b/src/chord/analyses/mln/datarace/MLNDataraceDriver.java
+index 1c8048d..0685d9d 100644
+--- a/src/chord/analyses/mln/datarace/MLNDataraceDriver.java
++++ b/src/chord/analyses/mln/datarace/MLNDataraceDriver.java
+@@ -162,7 +162,9 @@ public class MLNDataraceDriver extends MLNAnalysisDriver {
+ 		configFiles[1] = chordMain + File.separator + "src/chord/analyses/mln/datarace/mhp-cs-dlog_XZ89_.config";
+ 	//	configFiles[1] = chordMain + File.separator + "src/chord/analyses/mln/datarace/datarace-escaping-include-cs-dlog_XZ89_.config";
+ 		configFiles[2] = chordMain + File.separator + "src/chord/analyses/mln/datarace/datarace-parallel-include-cs-dlog_XZ89_.config";
+-		configFiles[3] = chordMain + File.separator + "src/chord/analyses/mln/datarace/datarace-cs-noneg-dlog_XZ89_.config";
++		if (this.runningBase) {
++			configFiles[3] = chordMain + File.separator + "src/chord/analyses/mln/datarace/datarace-cs-noneg-dlog_XZ89_.config";
++		}
+ 		return configFiles;
+ 	}
+ 
+@@ -180,7 +182,10 @@ public class MLNDataraceDriver extends MLNAnalysisDriver {
+ 		tasks.add(ClassicProject.g().getTask("thrSenCSCG-dlog"));
+ 		tasks.add(ClassicProject.g().getTask("reachableACM-dlog"));
+ 		tasks.add(ClassicProject.g().getTask("syncCLC-dlog"));
+-		tasks.add(ClassicProject.g().getTask("datarace-nongrded-include-cs-dlog"));
++		if (Boolean.getBoolean("chord.datarace.exclude.nongrded"))
++			tasks.add(ClassicProject.g().getTask("datarace-nongrded-exclude-cs-dlog"));
++		else
++			tasks.add(ClassicProject.g().getTask("datarace-nongrded-include-cs-dlog"));
+ 		tasks.add(ClassicProject.g().getTask("escE-java")); //PLDI'16
+ 		tasks.add(ClassicProject.g().getTask("datarace-cs-init-dlog"));
+ 	//	tasks.add(ClassicProject.g().getTask("mhp-cs-dlog"));
+@@ -191,7 +196,11 @@ public class MLNDataraceDriver extends MLNAnalysisDriver {
+ 		tasks.add(ClassicProject.g().getTask("mhp-cs-dlog_XZ89_"));
+ 		tasks.add(ClassicProject.g().getTask("datarace-parallel-include-cs-dlog_XZ89_"));
+ 	//	tasks.add(ClassicProject.g().getTask("datarace-escaping-include-cs-dlog_XZ89_"));
+-		tasks.add(ClassicProject.g().getTask("datarace-cs-noneg-dlog_XZ89_"));
++		if (this.runningBase) {
++			tasks.add(ClassicProject.g().getTask("datarace-cs-noneg-dlog_XZ89_"));
++		} else {
++			tasks.add(ClassicProject.g().getTask("datarace-cs-noneg-dlog"));
++		}
+ 	}
+ 
+ 	/**
+@@ -228,7 +237,13 @@ public class MLNDataraceDriver extends MLNAnalysisDriver {
+ 			System.setProperty("chord.ctxt.kind", "cs");
+ 			System.setProperty("chord.kcfa.k", "0");
+ //		}
+-		System.clearProperty("chord.mln.threscFile");
++		/* SRK 28th Sept 2017: This function (runBaseCase) is executed both in the PROBLEM mode and ORACLE mode.
++		   In the PROBLEM mode: the commandline settings of chord.mln.threscFile must be honored.
++		   In the ORACLE mode: the chord.mln.threscFile setting must be honored for the oracle run but it must
++		                       be cleared for the base run that just precedes the oracle run.
++		*/
++		if (this.mode == Mode.ORACLE)
++			System.clearProperty("chord.mln.threscFile");
+ 		for (ITask t : tasks) {
+ 			if(t.getName().equals("cspa-kobj-dlog"))
+ 				t = ClassicProject.g().getTask("cspa-kcfa-dlog");
+diff --git a/src/chord/analyses/superopt/SuperOptDispatcher.java b/src/chord/analyses/superopt/SuperOptDispatcher.java
+index 5b718a3..99d8915 100644
+--- a/src/chord/analyses/superopt/SuperOptDispatcher.java
++++ b/src/chord/analyses/superopt/SuperOptDispatcher.java
+@@ -59,6 +59,11 @@ public class SuperOptDispatcher implements JobDispatcher {
+ 	}
+ 
+ 	@Override
++	public void saveInterimState() {
++
++	}
++
++	@Override
+ 	public void saveState() {
+ 
+ 	}
+diff --git a/src/chord/analyses/thread/cs/DomAS.java b/src/chord/analyses/thread/cs/DomAS.java
+index 697cc4f..e42fd9b 100755
+--- a/src/chord/analyses/thread/cs/DomAS.java
++++ b/src/chord/analyses/thread/cs/DomAS.java
+@@ -46,7 +46,7 @@ import chord.util.tuple.object.Pair;
+ public class DomAS extends ProgramDom<Pair<Quad, jq_Method>> {
+     private DomI domI;
+     private DomM domM;
+-    public String toXMLAttrsString(Pair<Ctxt, jq_Method> aVal) {
++    public String toXMLAttrsString(Pair<Quad, jq_Method> aVal) {
+             if (domI == null)
+                     domI = (DomI) ClassicProject.g().getTrgt("I");
+             if (domM == null)
+@@ -57,4 +57,4 @@ public class DomAS extends ProgramDom<Pair<Quad, jq_Method>> {
+             int m = domM.indexOf(aVal.val1);
+             return "Iid=\"I" + i + "\" Mid=\"M" + m + "\"";
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/src/chord/analyses/thread/cs/ThreadAnalysis_cs.java b/src/chord/analyses/thread/cs/ThreadAnalysis_cs.java
+index 9b07e7a..b3d3f35 100755
+--- a/src/chord/analyses/thread/cs/ThreadAnalysis_cs.java
++++ b/src/chord/analyses/thread/cs/ThreadAnalysis_cs.java
+@@ -99,8 +99,10 @@ public class ThreadAnalysis_cs extends JavaAnalysis {
+         ProgramRel relThreadCIM = (ProgramRel) project.getTrgt("nonMainThreadCIM");
+         relThreadCIM.load();
+         Iterable<Trio<Ctxt, Quad, jq_Method>> tuples = relThreadCIM.getAry3ValTuples();
+-        for (Trio<Ctxt, Quad, jq_Method> p : tuples)
++        for (Trio<Ctxt, Quad, jq_Method> p : tuples) {
++            System.out.println("Adding thread to domAS: " + ((Quad)p.val1).toJavaLocStr() + "  " + ((jq_Method)p.val2).toString());
+             domAS.add(new Pair<Quad, jq_Method>(p.val1, p.val2));
++        }
+         domAS.save();
+         
+         ProgramRel relThreadACM = (ProgramRel) project.getTrgt("threadACM");

@@ -1,0 +1,264 @@
+diff --git a/libsrc/joeq/src/joeq/Compiler/Quad/ControlFlowGraph.java b/libsrc/joeq/src/joeq/Compiler/Quad/ControlFlowGraph.java
+index ae5ed15..7a0963f 100644
+--- a/libsrc/joeq/src/joeq/Compiler/Quad/ControlFlowGraph.java
++++ b/libsrc/joeq/src/joeq/Compiler/Quad/ControlFlowGraph.java
+@@ -387,7 +387,7 @@ public class ControlFlowGraph implements Graph, Serializable {
+     }
+     
+     public boolean removeUnreachableBasicBlocks() {
+-        Collection allBasicBlocks = new HashSet(reversePostOrder(entry()));
++        Collection allBasicBlocks = reversePostOrder(entry());
+         boolean change = false;
+         for (BasicBlock bb : reversePostOrder()) {
+             if (bb.getPredecessors().retainAll(allBasicBlocks))
+@@ -408,11 +408,14 @@ public class ControlFlowGraph implements Graph, Serializable {
+             }
+             change = true;
+             allBasicBlocks.removeAll(allBasicBlocks2);
+-            BasicBlock bb = (BasicBlock) allBasicBlocks.iterator().next();
++            BasicBlock bb = null;
++            for (Iterator bbIt = allBasicBlocks.iterator(); bbIt.hasNext(); )
++                bb = (BasicBlock) bbIt.next();
++            assert (bb != null);
+             System.out.println("Infinite loop discovered in "+this.getMethod()+", linking "+bb+" to exit.");
+             bb.addSuccessor(exit());
+             exit().addPredecessor(bb);
+-            allBasicBlocks = new HashSet(reversePostOrder(entry()));
++            allBasicBlocks = reversePostOrder(entry());
+             
+             //Fix added: If infinite loop exists, remove dangling predecessors
+             exit().getPredecessors().retainAll(allBasicBlocks);
+diff --git a/main/runner.pl b/main/runner.pl
+index 2d992e2..32f565a 100755
+--- a/main/runner.pl
++++ b/main/runner.pl
+@@ -27,11 +27,13 @@ my $ashes_dir = "ashesJSuite/benchmarks/";
+ # Map from program name to program directory relative to $pjbench_dir
+ my %benchmarks = (
+     "test" => "test",
++    "jspider" => "jspider",
+     "cache4j" => "cache4j",
+     "tsp" => "tsp",
+     "elevator" => "elevator",
+     "hedc" => "hedc",
+     "weblech" => "weblech-0.0.3",
++    "weblech-0.0.3" => "weblech-0.0.3",
+     "sor" => "sor",
+     "ftp" => "ftp",
+     "moldyn" => "java_grande/moldyn",
+@@ -104,9 +106,10 @@ my %local_options_map = (
+             "-Dchord.rhs.timeout=300000",
+             "-Dchord.rhs.merge=pjoin",
+             "-Dchord.rhs.trace=shortest",
+-            "-Dchord.reuse.scope=true",
+-            "-Dchord.reflect.file=\${chord.work.dir}/reflect.txt",
+-            "-Dchord.methods.file=\${chord.work.dir}/methods.txt",
++            #"-Dchord.reuse.scope=true",
++            #"-Dchord.reflect.file=\${chord.work.dir}/reflect.txt",
++            #"-Dchord.methods.file=\${chord.work.dir}/methods.txt",
++            "-Dchord.check.exclude=java.,com.,sun.,sunw.,javax.,launcher.",
+             "-Dchord.run.analyses=queryE,iter-thresc-java"
+         ],
+     "typestate_metaback" =>
+diff --git a/main/src/chord/analyses/datarace/web/group.xsl b/main/src/chord/analyses/datarace/web/group.xsl
+index 0b06263..c4ec7bf 100644
+--- a/main/src/chord/analyses/datarace/web/group.xsl
++++ b/main/src/chord/analyses/datarace/web/group.xsl
+@@ -4,7 +4,7 @@
+ 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+     xmlns:chord="http://chord.stanford.edu/">
+ 
+-<xsl:include href="A.xsl"/>
++<xsl:include href="AS.xsl"/>
+ <xsl:include href="E.xsl"/>
+ <xsl:include href="F.xsl"/>
+ <xsl:include href="O.xsl"/>
+diff --git a/main/src/chord/analyses/datarace/web/results.dtd b/main/src/chord/analyses/datarace/web/results.dtd
+index c8ba469..7ba7ead 100644
+--- a/main/src/chord/analyses/datarace/web/results.dtd
++++ b/main/src/chord/analyses/datarace/web/results.dtd
+@@ -1,5 +1,5 @@
+ <!ENTITY % Olist SYSTEM "Olist.dtd">
+-<!ENTITY % Alist SYSTEM "Alist.dtd">
++<!ENTITY % Alist SYSTEM "ASlist.dtd">
+ <!ENTITY % Hlist SYSTEM "Hlist.dtd">
+ <!ENTITY % Ilist SYSTEM "Ilist.dtd">
+ <!ENTITY % Mlist SYSTEM "Mlist.dtd">
+diff --git a/main/src/chord/analyses/datarace/web/results.xml b/main/src/chord/analyses/datarace/web/results.xml
+index f0687f2..150b3fc 100644
+--- a/main/src/chord/analyses/datarace/web/results.xml
++++ b/main/src/chord/analyses/datarace/web/results.xml
+@@ -1,25 +1,25 @@
+-<?xml version="1.0"?>
+-<!DOCTYPE results SYSTEM "results.dtd" [
+-  <!ENTITY dataracelist SYSTEM "dataracelist.xml">
+-  <!ENTITY TElist SYSTEM "TElist.xml">
+-  <!ENTITY Olist SYSTEM "Olist.xml">
+-  <!ENTITY Alist SYSTEM "Alist.xml">
+-  <!ENTITY Hlist SYSTEM "Hlist.xml">
+-  <!ENTITY Ilist SYSTEM "Ilist.xml">
+-  <!ENTITY Mlist SYSTEM "Mlist.xml">
+-  <!ENTITY Elist SYSTEM "Elist.xml">
+-  <!ENTITY Flist SYSTEM "Flist.xml">
+-  <!ENTITY Llist SYSTEM "Llist.xml">
+-]>
+-<results>
+-&dataracelist;
+-&TElist;
+-&Olist;
+-&Alist;
+-&Hlist;
+-&Ilist;
+-&Mlist;
+-&Elist;
+-&Flist;
+-&Llist;
+-</results>
++<?xml version="1.0"?>
++<!DOCTYPE results SYSTEM "results.dtd" [
++  <!ENTITY dataracelist SYSTEM "dataracelist.xml">
++  <!ENTITY TElist SYSTEM "TElist.xml">
++  <!ENTITY Olist SYSTEM "Olist.xml">
++  <!ENTITY Alist SYSTEM "ASlist.xml">
++  <!ENTITY Hlist SYSTEM "Hlist.xml">
++  <!ENTITY Ilist SYSTEM "Ilist.xml">
++  <!ENTITY Mlist SYSTEM "Mlist.xml">
++  <!ENTITY Elist SYSTEM "Elist.xml">
++  <!ENTITY Flist SYSTEM "Flist.xml">
++  <!ENTITY Llist SYSTEM "Llist.xml">
++]>
++<results>
++&dataracelist;
++&TElist;
++&Olist;
++&Alist;
++&Hlist;
++&Ilist;
++&Mlist;
++&Elist;
++&Flist;
++&Llist;
++</results>
+diff --git a/main/src/chord/analyses/escape/RelQueryE.java b/main/src/chord/analyses/escape/RelQueryE.java
+index 7e49378..b91ee02 100644
+--- a/main/src/chord/analyses/escape/RelQueryE.java
++++ b/main/src/chord/analyses/escape/RelQueryE.java
+@@ -8,6 +8,9 @@ import chord.analyses.heapacc.DomE;
+ import chord.project.Chord;
+ import chord.project.ClassicProject;
+ import chord.project.analyses.ProgramRel;
++import chord.project.OutDirUtils;
++
++import java.io.PrintWriter;
+ 
+ @Chord(name = "queryE", sign = "E0:E0", consumes = { "checkExcludedE" })
+ public class RelQueryE extends ProgramRel {
+@@ -16,13 +19,20 @@ public class RelQueryE extends ProgramRel {
+         ProgramRel relCheckExcludedE = (ProgramRel) ClassicProject.g().getTrgt("checkExcludedE");
+         relCheckExcludedE.load();
+         DomE domE = (DomE) doms[0];
++        PrintWriter outFile = OutDirUtils.newPrintWriter("statE.txt");
+         for (Quad q : domE) {
+             Operator op = q.getOperator();
+-            if (op instanceof Getstatic || op instanceof Putstatic)
++            if (op instanceof Getstatic || op instanceof Putstatic) {
++                if (!relCheckExcludedE.contains(q)) {
++                    int e = domE.indexOf(q);
++                    outFile.println(e + ":" + q.toJavaLocStr());
++                }
+                 continue;
++            }
+             if (!relCheckExcludedE.contains(q))
+                 add(q);
+         }
+         relCheckExcludedE.close();
++        outFile.close();
+     }
+ }
+diff --git a/main/src/chord/project/analyses/metaback/AbstractJobDispatcher.java b/main/src/chord/project/analyses/metaback/AbstractJobDispatcher.java
+index 450e592..4ba10c5 100644
+--- a/main/src/chord/project/analyses/metaback/AbstractJobDispatcher.java
++++ b/main/src/chord/project/analyses/metaback/AbstractJobDispatcher.java
+@@ -263,6 +263,36 @@ public abstract class AbstractJobDispatcher implements JobDispatcher {
+ 		return ancs.isEmpty();
+ 	}
+ 
++	public void saveInterimState() {
++		// Save to disk
++		{
++			init();
++
++			PrintWriter out;
++			out = Utils.openOutAppend(EX.path("proven_queries_interim.txt"));
++			for(Map.Entry<Abstraction, Set<Query>> entry: provenQs.entrySet()){
++				for(Query q:entry.getValue())
++					out.println(q.encode());
++			}
++
++			out.flush();
++			out.close();
++
++			out = Utils.openOutAppend(EX.path("unproven_queries_interim.txt"));
++			for (Query q : impossiQs)
++				out.println(q.encode());
++			for (Query q : timedQs)
++				out.println(q.encode());
++			for (Query q : explodedQs)
++				out.println(q.encode());
++			for (Query q : iterExceedQs)
++				out.println(q.encode());
++			out.flush();
++			out.close();
++		}
++	}
++
++
+ 	@Override
+ 	public void saveState() {
+ 		// Save to disk
+diff --git a/main/src/chord/project/analyses/parallelizer/JobDispatcher.java b/main/src/chord/project/analyses/parallelizer/JobDispatcher.java
+index 81a412a..e9d4696 100755
+--- a/main/src/chord/project/analyses/parallelizer/JobDispatcher.java
++++ b/main/src/chord/project/analyses/parallelizer/JobDispatcher.java
+@@ -32,6 +32,11 @@ public interface JobDispatcher {
+ 	void saveState();
+ 	
+ 	/**
++	 * Save dispatcher state
++	 */
++	void saveInterimState();
++
++	/**
+ 	 * Query about the maximum number of workers needed by the dispatcher.
+ 	 * If the current number of workers is greater than the returned number,
+ 	 * the master kills the extra threads
+diff --git a/main/src/chord/project/analyses/parallelizer/Master.java b/main/src/chord/project/analyses/parallelizer/Master.java
+index a5f4215..380c254 100755
+--- a/main/src/chord/project/analyses/parallelizer/Master.java
++++ b/main/src/chord/project/analyses/parallelizer/Master.java
+@@ -125,9 +125,9 @@ public class Master {
+ 					lastContact.clear();
+ 					X.logs("Cleared workers");
+ 					
+-				} else if (cmd.startsWith("SAVE")) { //Not used currently
++				} else if (cmd.startsWith("SAVE")) {
+ 					
+-					dispatcher.saveState();
++					dispatcher.saveInterimState();
+ 					X.logs("Saved");
+ 					
+ 				} else if (cmd.startsWith("EXIT")) { //Not used currently
+diff --git a/main/src/chord/project/analyses/parallelizer/ParallelAnalysis.java b/main/src/chord/project/analyses/parallelizer/ParallelAnalysis.java
+index d4f28b8..be85f22 100755
+--- a/main/src/chord/project/analyses/parallelizer/ParallelAnalysis.java
++++ b/main/src/chord/project/analyses/parallelizer/ParallelAnalysis.java
+@@ -203,6 +203,9 @@ public abstract class ParallelAnalysis extends JavaAnalysis implements BlackBox
+ 				numJobs++;
+ 				X.putOutput("numJobs", numJobs);
+ 				X.flushOutput();
++				line = callMaster("SAVE");
++				X.logs("Asked master to save interim results, got reply: %s", line);
++				X.flushOutput();
+ 			} else {
+ 				if (ID == null)
+ 					X.logs("ID not set for worker. Try again...");

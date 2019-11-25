@@ -1,0 +1,14 @@
+Nov 11 2017
+-----------
+
+All the benchmarks contain <benchmark_name>.gt which is the ground truth in tuple form: 
+   races discovered by FastTrack + may or may not include races discovered by manual inspection.
+
+All benchmarks contain <benchmark_name>_races.txt which is not being maintained
+  - it is now inconsistent with the other files.
+
+All benchmarks contain <benchmark_name>.fs.loc which are the races discovered by FastTrack in loc form.
+
+All benchmarks contain <benchmark_name>.fs which are the tuple version of the races found
+   by FS and also found in oracle thresc run.
+

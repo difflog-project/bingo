@@ -1,0 +1,19 @@
+1. Algorithm 1.
+   Run on Avrora.
+   Exact and LBX MaxSAT solvers.
+   0%, 1%, and 5% feedback, on each.
+   Perform sanity checks: Make sure that tuple confidence is affected by feedback iff it is "nearby", either in the
+   derivation tree, or in alarm location.
+
+2. Algorithm 2. Inspect, and figure out how much to do for Tuffy Marginal.
+
+3. Algorithm 3. Inspect Bayesian network libraries. bnlearn for R, and Dlib for C++.
+   Do Gibbs sampling, and other MCMC-based methods work for models with lots of deterministic nodes, i.e. hard rules?
+
+---
+
+4. Decide analysis + benchmarks.
+   Datarace + downcast + null deref.
+   Talk to Xujie, Richard, Kihong.
+
+5. Talk to Xin: Clarify role of grounding

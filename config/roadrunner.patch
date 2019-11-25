@@ -1,0 +1,24 @@
+diff --git a/msetup b/msetup
+index 250a061..c2ed3c6 100644
+--- a/msetup
++++ b/msetup
+@@ -33,11 +33,17 @@
+ # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ # Must be a 1.7 or later VM
+-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_111.jdk/Contents/Home/
++#export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_111.jdk/Contents/Home/
+ 
+ # These two lines are for OS X, to set the max memory to just under
+ # the total machine memory
+-GIGS=`system_profiler SPHardwareDataType | grep Memory | cut -f2 -d: | cut -f1 -dG | sed -e "s/ //g" `
++if [ -f "/proc/meminfo" ]; then
++    let TOTAL_MEM_KB=`grep 'MemTotal' /proc/meminfo | sed 's/MemTotal: *//' | sed 's/ kB//'`
++    let TOTAL_MEM_GB=TOTAL_MEM_KB/1024/1024
++    export GIGS=$TOTAL_MEM_GB
++else
++    export GIGS=`system_profiler SPHardwareDataType | grep Memory | cut -f2 -d: | cut -f1 -dG | sed -e "s/ //g" `
++fi
+ export JVM_ARGS="-Xmx${GIGS}g -Xms1g"
+ 
+ 

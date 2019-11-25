@@ -1,0 +1,11 @@
+net/javacoding/jspider/core/threading/WorkerThread.java:127 net/javacoding/jspider/core/threading/WorkerThread.java:140
+net/javacoding/jspider/core/task/impl/SchedulerImpl.java:135 net/javacoding/jspider/core/task/impl/SchedulerImpl.java:135
+net/javacoding/jspider/core/task/impl/SchedulerImpl.java:135 net/javacoding/jspider/core/task/impl/SchedulerImpl.java:135
+net/javacoding/jspider/core/threading/WorkerThread.java:83 net/javacoding/jspider/core/threading/WorkerThread.java:127
+net/javacoding/jspider/core/task/impl/SchedulerImpl.java:132 net/javacoding/jspider/core/task/impl/SchedulerImpl.java:132
+net/javacoding/jspider/core/task/impl/SchedulerImpl.java:132 net/javacoding/jspider/core/task/impl/SchedulerImpl.java:132
+net/javacoding/jspider/tool/impl/HeadersTool.java:28 net/javacoding/jspider/tool/impl/HeadersTool.java:33
+net/javacoding/jspider/tool/impl/HeadersTool.java:28 net/javacoding/jspider/tool/impl/HeadersTool.java:38
+net/javacoding/jspider/tool/impl/HeadersTool.java:33 net/javacoding/jspider/tool/impl/HeadersTool.java:33
+net/javacoding/jspider/tool/impl/HeadersTool.java:33 net/javacoding/jspider/tool/impl/HeadersTool.java:38
+net/javacoding/jspider/tool/impl/HeadersTool.java:38 net/javacoding/jspider/tool/impl/HeadersTool.java:38

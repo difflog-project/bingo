@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+export PROBLEM_DIR=$1    # The dir containing the bnet to be read. 
+                         # ex: pjbench/dacapo/benchmarks/luindex/chord_output_mln-datarace-problem 
+
+export AUG_DIR=$2        # the dir containing the augmented or not augmented BN 
+export BASE_FILE=$3      # filename (relative to chord-fork) containing the alarms to be ranked.
+export ORACLE_FILE=$4    # filename (relative to chord-fork) containing TrueGround tuples
+export MIN=$5            # min iters arg to AC command
+export PREFIX=$6         # prefix for output files/dirs to allow multiple instances of ranker on a machine.
+
+# Example command: ./scripts/bnet/accmd pjbench/jspider/chord_output_mln-datarace-problem noaugment_base pjbench/jspider/chord_output_mln-datarace-problem/base_queries.txt pjbench/jspider/jspider_races_rr_tup_FFT_base.out 500 js_500_ &
+
+MAX=$((MIN + 500))
+
+
+mkdir ${PREFIX}combined
+
+nohup ./scripts/bnet/driver.py \
+                         $PROBLEM_DIR/bnet/$AUG_DIR/bnet-dict.out \
+                         $PROBLEM_DIR/bnet/$AUG_DIR/factor-graph.fg \
+                         $BASE_FILE \
+                         $ORACLE_FILE \
+                         > ${PREFIX}driver.out 2> ${PREFIX}driver.log <<EOF
+AC 1e-6 $MIN $MAX 100 ${PREFIX}stats.txt ${PREFIX}combined/ out
+EOF

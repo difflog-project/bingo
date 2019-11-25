@@ -1,0 +1,4 @@
+race Read Spider.java:103 Write Spider.java:232
+race Write Spider.java:232 Write weblech/spider/Spider.java:232
+race Write Spider.java:232 Write weblech/spider/Spider.java:92
+race Read Spider.java:103 Write Spider.java:92

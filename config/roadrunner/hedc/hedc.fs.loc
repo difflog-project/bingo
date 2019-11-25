@@ -1,0 +1,5 @@
+race Read MetaSearchResult.java:51 Write Task.java:45
+race Read MetaSearchResult.java:13 Write MetaSearchResult.java:59
+race Read MetaSearchResult.java:60 Write MetaSearchResult.java:53
+race Read MetaSearchResult.java:25 Write SohoSynoptic.java:309
+race Read MetaSearchResult.java:50 Write Task.java:45
