@@ -38,7 +38,7 @@ in C++.
 0. **Analysis Run:** After the analysis run is complete, we assume that the `PROBLEM_DIR` directory contains the
    following files:
 
-   1. `base_queries.txt`. This file contains the list of alarms reported by the analysis. Note that each alarm is
+   a. `base_queries.txt`. This file contains the list of alarms reported by the analysis. Note that each alarm is
       reported as a tuple, rather than as an error message string. How these tuples map to the actual error message
       presented to the user is an analysis-specific design decision.
 
@@ -53,7 +53,7 @@ in C++.
       conventional: the only concrete requirements that Bingo makes are that each tuple is represented by a globally
       unique string, and that there are no spaces in this string.
 
-  2. `rule_dict.txt`. Each derivation rule of the analysis is assigned a name, conventionally of the form `Rn`, for some
+  b. `rule_dict.txt`. Each derivation rule of the analysis is assigned a name, conventionally of the form `Rn`, for some
      number n. The `rule_dict.txt` file contains a mapping between the rule name and the underlying rule. Each line of
      this file contains an element of this mapping in the form `Rn: rule description`. This file is for human
      consumption only, and is not strictly required, and the format is not strictly regulated.
