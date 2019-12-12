@@ -35,7 +35,7 @@ the path `bingo/examples/lusearch/`.
 Most of the constituent scripts are written in Python. A few small performance-critical pieces of code have been written
 in C++.
 
-1. **Analysis Run:** After the analysis run is complete, we assume that the `PROBLEM_DIR` directory contains the
+0. **Analysis Run:** After the analysis run is complete, we assume that the `PROBLEM_DIR` directory contains the
    following files:
 
    1. `base_queries.txt`. This file contains the list of alarms reported by the analysis. Note that each alarm is
@@ -53,9 +53,9 @@ in C++.
       conventional: the only concrete requirements that Bingo makes are that each tuple is represented by a globally
       unique string, and that there are no spaces in this string.
 
-  2. `rule_dict.txt`. Each derivation rule of the analysis is assigned a name, conventionally of the form `Rn`, for some
-     number n. The `rule_dict.txt` file contains a mapping between the rule name and the underlying rule. Each line of
-     this file contains an element of this mapping in the form `Rn: rule description`. This file is for human
-     consumption only, and is not strictly required, and the format is not strictly regulated.
+   2. `rule_dict.txt`. Each derivation rule of the analysis is assigned a name, conventionally of the form `Rn`, for
+      some number n. The `rule_dict.txt` file contains a mapping between the rule name and the underlying rule. Each
+      line of this file contains an element of this mapping in the form `Rn: rule description`. This file is for human
+      consumption only, and is not strictly required, and the format is not strictly regulated.
 
-2. **Cycle Elimination (prune-cons):**
+1. **Cycle Elimination (prune-cons):**
