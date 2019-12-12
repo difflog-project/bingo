@@ -57,3 +57,5 @@ in C++.
      number n. The `rule_dict.txt` file contains a mapping between the rule name and the underlying rule. Each line of
      this file contains an element of this mapping in the form `Rn: rule description`. This file is for human
      consumption only, and is not strictly required, and the format is not strictly regulated.
+
+1. **Cycle Elimination (prune-cons):**
