@@ -26,10 +26,18 @@ https://bitbucket.org/rmukundroot/commands/src/master/.
 Building Bingo
 --------------
 
-Bingo is mostly written in Python. A few small performance-critical pieces of code have been written in C++. These
-pieces depend on the Boost C++ libraries and on the LibDAI inference library. On Ubuntu, ensure that you have the
-`libboost-dev` package installed. The build script will itself clone LibDAI. LibDAI itself depends on the gmpxx wrapper
-to the GMP library. These dependencies may be installed by running: `sudo apt install libboost-dev libgmp-dev`
+Bingo is mostly written in Python. A few small performance-critical pieces of code have been written in C++. The core of
+Bingo crucially depends on the LibDAI inference library, which the build script will clone itself. Ensure that you have
+the Boost C++ libraries and the gmpxx wrapper to the GMP library installed. On Ubuntu, the appropriate dependencies can
+be installed by running:
+```
+sudo apt install libboost-dev libboost-program-options-dev libboost-test-dev libgmp-dev
+```
+Now, build Bingo by running:
+```
+./scripts/build.sh
+```
+from the main Bingo directory.
 
 System Workflow
 ---------------
