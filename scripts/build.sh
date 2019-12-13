@@ -7,62 +7,6 @@
 
 source ./scripts/setpaths.sh
 
-# { Dependencies
-pushd $CHORD_DIR/libsrc
-
-  ## { JavaBDD
-  pushd JavaBDD
-  ant && ant jar
-  if [ $? -ne 0 ]; then
-    echo "Build failed: JavaBDD"
-    exit 1
-  fi
-  popd
-  ## }
-
-  ## { bddbddb
-  pushd bddbddb
-  ant && ant jar
-  if [ $? -ne 0 ]; then
-    echo "Build failed: BDDBDDB"
-    exit 1
-  fi
-  popd
-  ## }
-
-popd
-# }
-
-# { Chord
-pushd $CHORD_MAIN
-ant
-if [ $? -ne 0 ]; then
-  echo "Build failed: JChord"
-  exit 1
-fi
-popd
-# }
-
-# { Chord Incubator
-pushd $CHORD_INCUBATOR
-ant
-if [ $? -ne 0 ]; then
-  echo "Build failed: chord_incubator"
-  exit 1
-fi
-popd
-# }
-
-# { Nichrome
-pushd $NICHROME/main
-ant
-if [ $? -ne 0 ]; then
-  echo "Build failed: nichrome"
-  exit 1
-fi
-popd
-# }
-
 # { prune-cons
 pushd scripts/bnet/prune-cons
 ./build.sh
@@ -74,6 +18,7 @@ popd
 # }
 
 # { LibDAI
+git clone https://bitbucket.org/rmukundroot/libdai.git
 pushd libdai
 ./build.sh
 if [ $? -ne 0 ]; then

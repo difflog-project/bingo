@@ -26,7 +26,10 @@ https://bitbucket.org/rmukundroot/commands/src/master/.
 Building Bingo
 --------------
 
-Bingo is mostly written in Python. A few small performance-critical pieces of code have been written in C++.
+Bingo is mostly written in Python. A few small performance-critical pieces of code have been written in C++. These
+pieces depend on the Boost C++ libraries and on the LibDAI inference library. On Ubuntu, ensure that you have the
+`libboost-dev` package installed. The build script will itself clone LibDAI. LibDAI itself depends on the gmpxx wrapper
+to the GMP library. These dependencies may be installed by running: `sudo apt install libboost-dev libgmp-dev`
 
 System Workflow
 ---------------
@@ -74,10 +77,10 @@ suite.
       from the input hypotheses `h1`, `h2`, ..., `hk`. We assume that tuples which are not the conclusion of any rule
       instantiation are facts about the program which have been supplied as input to the analysis (also called the EDB).
 
-      The constraints in `named_cons_all.txt` can be visualized as forming a derivation graph, such as those shown in
-      Figures 3, 4 and 6 of the PLDI 2018 paper.
-
-1. **Cycle Elimination (prune-cons):**
+1. **Cycle Elimination (prune-cons):** The constraints in `named_cons_all.txt` can be visualized as forming a derivation
+   graph, such as those shown in Figures 3, 4 and 6 of the PLDI 2018 paper. The nature of Datalog fixpoints means that
+   the graph routinely contains multiple ways to derive a single output tuple and various pathological structures such
+   as cycles. The first step is to eliminate these cycles
 
 2. **Converting the Derivation Graph into a Bayesian Network (cons_all2bnet.py):** Makes disjunctions explicit.
 
