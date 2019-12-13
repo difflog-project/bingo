@@ -8,7 +8,7 @@ In this readme file, we will describe the system workflow, its constituent scrip
 **NOTE 1:** The Bingo system is agnostic of the underlying static analysis. Per our description in the PLDI 2018 paper,
 we nominally assume that the analysis is expressed in Datalog. However, the code we provide here can more generally work
 with any analysis that can be conceptualized as consisting of derivation rules which are repeatedly instantiated until
-fixpoint. In particular, we assume that the analysis produces a set of output conclusions (a subset of which are
+fixpoint. In particular, we require that the analysis produces a set of output conclusions (a subset of which are
 reported to the user as warnings) and a derivation graph which connects them together. In the terminology that follows,
 the alarms are reported in a file named `base_queries.txt`, the analysis rules are listed in a file called
 `rule_dict.txt`, and the derivation graph is contained in a file called `named_cons_all.txt`.
@@ -40,24 +40,32 @@ communicate by creating several files in `PROBLEM_DIR` whose purpose we will now
    following files:
 
    1. `base_queries.txt`. This file contains the list of alarms reported by the analysis. Note that each alarm is
-      reported as a tuple, rather than as an error message string. How these tuples map to the actual error message
-      presented to the user is an analysis-specific design decision.
+      listed in the form of a tuple, rather than as the warning message string presented to the user. Each tuple is of
+      the form `RelName(v1,v2,v3,...,vk)`, for some relation name `RelName`, and where `v1`, `v2`, ..., `vk` are the
+      fields of the tuple. However, note that this format is merely conventional: the only concrete requirements that
+      Bingo makes are that each tuple is represented by a globally unique string, and that there are no spaces in this
+      string.
 
       See the `base_queries.txt` file included with the `lusearch` example. This file contains a list of tuples of the
       form `racePairs_cs(x,y)`. Each of these tuples indicates a possible datarace between source location `x` and
-      source location `y`. For example, the alarm tuple `racePairs_cs(15503,15503)` may be decoded into the following
-      human-readable warning message: "The field access at line 116 of the method `add()` in the class
-      `org.apache.lucene.analysis.CharArraySet` may have a datarace with itself."
+      source location `y`. For example, the alarm tuple `racePairs_cs(15562,15645)` may be decoded into the following
+      human-readable warning message: "There may be a datarace between the field accesses at line 40 of the file
+      `org/apache/lucene/analysis/LowerCaseFilter.java` and at line 685 of the file
+      `org/apache/lucene/analysis/Token.java`." The file `racePairs_cs.txt` contains the corresponding human-readable
+      warning messages. In general, how the alarm tuples map to the actual warning message is an analysis-specific
+      design decision.
 
-      Observe that each tuple is of the form `RelName(v1,v2,v3,...,vk)`, for some relation name `RelName`, and where
-      `v1`, `v2`, ..., `vk` are the fields of the tuple. However, note that this format is merely conventional: the only
-      concrete requirements that Bingo makes are that each tuple is represented by a globally unique string, and that
-      there are no spaces in this string.
+      Of the 237 alarms in the `lusearch` example, only the four alarms listed in `oracle_queries.txt` are real bugs. Of
+      course, when analyzing a new program, the user is unaware of which alarms are real bugs and which are false
+      positives: we can only provide `oracle_queries.txt` for the example problem because we have laboriously triaged
+      each of the alarms.
 
    2. `rule_dict.txt`. Each derivation rule of the analysis is assigned a name, conventionally of the form `Rn`, for
       some number n. The `rule_dict.txt` file contains a mapping between the rule name and the underlying rule. Each
       line of this file contains an element of this mapping in the form `Rn: rule description`. This file is for human
       consumption only, and is not strictly required, and the format is not strictly regulated.
+
+   3. 
 
 1. **Cycle Elimination (prune-cons):**
 
