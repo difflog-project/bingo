@@ -85,14 +85,21 @@ suite.
       from the input hypotheses `h1`, `h2`, ..., `hk`. We assume that tuples which are not the conclusion of any rule
       instantiation are facts about the program which have been supplied as input to the analysis (also called the EDB).
 
+   4. `rule-prob.txt`. This file contains the mapping from rule names to their probability values. Each rule is given a
+      a line of the form `Rn: pn`, where `Rn` is the name of the rule and `pn` is its probability value. The next
+      `build-bnet.sh` will, by default, assign the probability value 0.999 to rules which do not appear in
+      `rule-prob.txt`. As a result, an empty `rule-prob.txt` is completely acceptable:
+      `cat /dev/null > $PROBLEM_DIR/rule-prob.txt`. In fact, our experiments in the PLDI 2018 paper were conducted with
+      an empty `rule-prob.txt` file.
+
 1. **Building the Bayesian Network (`build-bnet.sh`):** The `build-bnet.sh` script converts the constraints in
    `named_cons_all.txt` into a Bayesian network. We provide two versions of this script. Either run:
    ```
-   ./scripts/bnet/compressed/build-bnet.sh $PROBLEM_DIR noaugment_base rule_prob.txt bnet
+   ./scripts/bnet/compressed/build-bnet.sh $PROBLEM_DIR noaugment_base $PROBLEM_DIR/rule_prob.txt bnet
    ```
    or run
    ```
-   ./scripts/bnet/build-bnet.sh $PROBLEM_DIR noaugment_base rule_prob.txt bnet
+   ./scripts/bnet/build-bnet.sh $PROBLEM_DIR noaugment_base $PROBLEM_DIR/rule_prob.txt bnet
    ```
    The first script applies the chain compression procedure described in Algorithm 3 of our PLDI 2018 paper, but the two
    two commands are otherwise interchangeable. We recommend the use of the compressed version unless in specific
