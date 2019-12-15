@@ -19,10 +19,6 @@ Furthermore, this intial analysis run is unimportant to anyone wishing to port B
 In this code distribution, we therefore only include the portion of the workflow after the analysis run has been
 completed, the alarms have been reported, and the derivation graph has been extracted.
 
-**NOTE 3:** This respository is still being cleaned up. This will be completed over the next few days. The contents of
-this repository are being forked from a previous repository which is privately hosted at
-https://bitbucket.org/rmukundroot/commands/src/master/.
-
 Building Bingo
 --------------
 
