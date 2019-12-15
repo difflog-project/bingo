@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Intended to be run from the chord-fork folder.
+# Intended to be run from the main Bingo directory.
 # Given a project name and a project path, runs the commands that must be run before driver.py can be invoked. This
 # includes pruning the constraints in named_cons_all.txt, turning named_cons_all.txt.pruned into a bayesian network, and
 # finally turning named-bnet.out into factor-graph.fg which is readable by driver.py.
@@ -27,14 +27,16 @@
 #    cons_all2bnet.py.
 
 # cd ./Error-Ranking/chord-fork
-# ./scripts/bnet/build-bnet.sh ftp pjbench/ftp noaugment_base rule-prob.txt chord_output_mln-datarace-problem chord_output_mln-datarace-problem/base_queries.txt [dolist] [noprune] [oldbnet]
+# ./scripts/bnet/build-bnet.sh pjbench/ftp \
+#                              noaugment_base rule-prob.txt \
+#                              chord_output_mln-datarace-problem \
+#                              chord_output_mln-datarace-problem/base_queries.txt
 
-export PROGRAM=$1
-export PROGRAM_PATH=`readlink -f $2`
-export AUGMENT_DIR=$3
-export RULE_PROB_FILENAME=$4
-export BNET_DIR=$5
-export OP_TUPLE_FILENAME="$PROGRAM_PATH/$6"
+export PROGRAM_PATH=`readlink -f $1`
+export AUGMENT_DIR=$2
+export RULE_PROB_FILENAME=$3
+export BNET_DIR=$4
+export OP_TUPLE_FILENAME="$PROGRAM_PATH/$5"
 
 if [[ $AUGMENT_DIR == noaugment* ]]
 then
@@ -47,34 +49,19 @@ else
    exit 1
 fi
 
-if [[ "$@" =~ "dolist" ]]; then
-  ./scripts/list.sh $PROGRAM $PROGRAM_PATH exact oracle base
-fi
-
 mkdir -p $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR
 
-if [[ ! "$@" =~ "noprune" ]]; then
-  ./scripts/bnet/prune-cons/prune-cons $AUGMENT $OP_TUPLE_FILENAME \
-       < $PROGRAM_PATH/${BNET_DIR}/named_cons_all.txt \
-       > $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned \
-       2> $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/prune-cons.log
-fi
+./scripts/bnet/prune-cons/prune-cons $AUGMENT $OP_TUPLE_FILENAME \
+     < $PROGRAM_PATH/${BNET_DIR}/named_cons_all.txt \
+     > $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned \
+     2> $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/prune-cons.log
 
-if [[ ! "$@" =~ "oldbnet" ]]; then
-  ./scripts/bnet/cons_all2bnet.py $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/bnet-dict.out narrowor \
-      < $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned \
-      > $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/named-bnet.out \
-      2> $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/cons_all2bnet.log
-fi
+./scripts/bnet/cons_all2bnet.py $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/bnet-dict.out narrowor \
+    < $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned \
+    > $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/named-bnet.out \
+    2> $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/cons_all2bnet.log
 
-# ./scripts/bnet/leaky-bnet2fg.py $RULE_PROB_FILENAME 0.999 0.0001 \
 ./scripts/bnet/bnet2fg.py $RULE_PROB_FILENAME 0.999 \
     < $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/named-bnet.out \
     > $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/factor-graph.fg \
     2> $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/bnet2fg.log
-
-#if [ -x "$(command -v zenity)" ]; then
-  #zenity --info --text="Finished running build-bnet.sh!" &> /dev/null &
-#else
-  #xmessage --text="Finished running build-bnet.sh!" &> /dev/null &
-#fi

@@ -5,8 +5,6 @@
 # cd ./Error-Ranking/chord-fork
 # ./scripts/build.sh
 
-source ./scripts/setpaths.sh
-
 # { prune-cons
 pushd scripts/bnet/prune-cons
 ./build.sh

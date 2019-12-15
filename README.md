@@ -85,15 +85,29 @@ suite.
       from the input hypotheses `h1`, `h2`, ..., `hk`. We assume that tuples which are not the conclusion of any rule
       instantiation are facts about the program which have been supplied as input to the analysis (also called the EDB).
 
+1. **Building the Bayesian Network (`build-bnet.sh`):** The `build-bnet.sh` script converts the constraints in
+   `named_cons_all.txt` into a Bayesian network. We provide two versions of this script. Either run:
+   ```
+   ./scripts/bnet/compressed/build-bnet.sh $PROGRAM_NAME $PROGRAM_PATH noaugment_base rule_prob.txt
+   ```
+   or run
+   ```
+   ./scripts/bnet/build-bnet.sh $PROGRAM_NAME $PROGRAM_PATH noaugment_base rule_prob.txt
+   ```
+   The first script
+
+Under the Hood of `build-bnet.sh`
+---------------------------------
+
 1. **Cycle Elimination (prune-cons):** The constraints in `named_cons_all.txt` can be visualized as forming a derivation
    graph, such as those shown in Figures 3, 4 and 6 of the PLDI 2018 paper. The nature of Datalog fixpoints means that
    the graph routinely contains multiple ways to derive a single output tuple and various pathological structures such
    as cycles. The first step is to eliminate these cycles
+
+2. **Compressing the Constraint Graph (compress-cons-all.py):**
 
 2. **Converting the Derivation Graph into a Bayesian Network (cons_all2bnet.py):** Makes disjunctions explicit.
 
 3. **Converting the Bayesian Network into a Factor Graph (bnet2fg.py):**
 
 4. **Main Bingo Interaction Loop (driver.py):**
-
-**NOTE:** `build-bnet.sh`
