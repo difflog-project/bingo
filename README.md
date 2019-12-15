@@ -183,3 +183,7 @@ in the interaction loop may find the following commands useful:
 6. `AC tolerance minIters maxIters histLength stats.txt combined out`. Run the interaction loop, but assuming that the
    provided `oracle_queries.txt` file is the ground truth. This was the command we used to test the system while running
    the experiments in the paper.
+
+Note that `driver.py` is very sensitive to the order in which these commands are issued. Please make sure that the
+sequence of commands is from the following regular language: `MAC | (BP* (HA | Q | P) O)* | AC`. All commands except
+`MAC` and `AC` are idempotent, and `HA`, `Q` and `P` do not change the state of the system.
