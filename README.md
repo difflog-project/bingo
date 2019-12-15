@@ -111,7 +111,6 @@ suite.
 
    The script will place the Bayesian network in the directory `$PROBLEM_DIR/bnet/noaugment_base/`. The most important
    files in this directory are:
-
    1. `named-cons-all.txt.pruned`. This contains the output of the cycle elimination procedure described in Algorithm 2
       of the paper.
    2. `named-bnet.out`. Contains the constraint graph as a Bayesian network with deterministic or and probabilistic and
