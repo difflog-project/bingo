@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-# Intended to be run from the main Bingo directory.
-# Given a project name and a project path, runs the commands that must be run before driver.py can be invoked. This
-# includes pruning the constraints in named_cons_all.txt, turning named_cons_all.txt.pruned into a bayesian network, and
-# finally turning named-bnet.out into factor-graph.fg which is readable by driver.py.
+# Given a project path, runs the commands that must be run before driver.py can be invoked. This includes pruning the
+# constraints in named_cons_all.txt, turning named_cons_all.txt.pruned into a Bayesian network, and finally turning
+# named-bnet.out into factor-graph.fg which is readable by driver.py.
 
 # Arguments:
 # 1. Project path, in a format recognized by list.sh, and eventually by runner.pl.
@@ -16,17 +15,15 @@
 #                     convention, that the k-obj=3-sensitive oracle with thread escape was used as the set of queries to
 #                     to be ranked.
 # 3. rule-prob.txt, file mapping rule names to probabilities.
-# 4. bnet dir: The chord_output folder that contains the named_cons_all.txt and in which the bnet should be built.
 
-# cd ./Error-Ranking/chord-fork
-# ./scripts/bnet/build-bnet.sh pjbench/ftp \
-#                              noaugment_base rule-prob.txt \
-#                              chord_output_mln-datarace-problem
+# Intended to be run from the main Bingo directory.
+# ./scripts/bnet/build-bnet.sh pjbench/ftp noaugment_base rule-prob.txt
+
+set -e
 
 export PROGRAM_PATH=`readlink -f $1`
 export AUGMENT_DIR=$2
 export RULE_PROB_FILENAME=$3
-export BNET_DIR=$4
 export OP_TUPLE_FILENAME="$PROGRAM_PATH/base_queries.txt"
 
 if [[ $AUGMENT_DIR == noaugment* ]]
@@ -40,19 +37,19 @@ else
    exit 1
 fi
 
-mkdir -p $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR
+mkdir -p $PROGRAM_PATH/bnet/$AUGMENT_DIR
 
 ./scripts/bnet/prune-cons/prune-cons $AUGMENT $OP_TUPLE_FILENAME \
-     < $PROGRAM_PATH/${BNET_DIR}/named_cons_all.txt \
-     > $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned \
-     2> $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/prune-cons.log
+     < $PROGRAM_PATH/named_cons_all.txt \
+     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned \
+     2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/prune-cons.log
 
-./scripts/bnet/cons_all2bnet.py $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/bnet-dict.out narrowor \
-    < $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned \
-    > $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/named-bnet.out \
-    2> $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/cons_all2bnet.log
+./scripts/bnet/cons_all2bnet.py $PROGRAM_PATH/bnet/$AUGMENT_DIR/bnet-dict.out narrowor \
+    < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned \
+    > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named-bnet.out \
+    2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/cons_all2bnet.log
 
 ./scripts/bnet/bnet2fg.py $RULE_PROB_FILENAME 0.999 \
-    < $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/named-bnet.out \
-    > $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/factor-graph.fg \
-    2> $PROGRAM_PATH/${BNET_DIR}/bnet/$AUGMENT_DIR/bnet2fg.log
+    < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named-bnet.out \
+    > $PROGRAM_PATH/bnet/$AUGMENT_DIR/factor-graph.fg \
+    2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/bnet2fg.log

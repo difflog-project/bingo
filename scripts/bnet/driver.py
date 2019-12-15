@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 
-# Intended to be run from the chord-fork folder.
-# cd Error-Ranking/chord-fork
-# ./scripts/bnet/driver.py pjbench/ftp/chord_output_mln-datarace-problem/bnet/noaugment/bnet-dict.out \
-#                          pjbench/ftp/chord_output_mln-datarace-problem/bnet/noaugment/factor-graph.fg \
-#                          pjbench/ftp/chord_output_mln-datarace-problem/base_queries.txt \
-#                          pjbench/ftp/chord_output_mln-datarace-oracle/oracle_queries.txt
-
 # Accepts human-readable commands from stdin, and passes them to LibDAI/wrapper.cpp, thus acting as a convenient driver.
 # Arguments:
 # 1. Dictionary file for the bayesian network, named-dict.out, produced by cons_all2bnet.py. This is to translate
@@ -16,6 +9,12 @@
 # 3. Base queries file, base_queries.txt. This need not be the full list of base queries produced by Chord, but could
 #    instead be any subset of it, such as the alarms reported by the upper oracle.
 # 4. Oracle queries file, oracle_queries.txt. Needed while producing combined.out.
+
+# Intended to be run from the main Bingo directory
+# ./scripts/bnet/driver.py pjbench/ftp/bnet/noaugment/bnet-dict.out \
+#                          pjbench/ftp/bnet/noaugment/factor-graph.fg \
+#                          pjbench/ftp/base_queries.txt \
+#                          pjbench/ftp/oracle_queries.txt
 
 import logging
 import subprocess
@@ -115,6 +114,17 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
                     'NegLabel'
             print('{0}\t{1}\t{2}\t{3}\tSPOkGoodGood\t{4}'.format(index, confidence, ground, label, t), file=outFile)
 
+    def printMRankedAlarms(outFile):
+        alarmList = getRankedAlarms()
+        print('Rank\tConfidence\tLabel\tTuple', file=outFile)
+        index = 0
+        for t, confidence in alarmList:
+            index = index + 1
+            label = 'Unlabelled' if t not in labelledTuples else \
+                    'PosLabel' if labelledTuples[t] else \
+                    'NegLabel'
+            print(f'{index}\t{confidence}\t{label}\t{t}', file=outFile)
+
     def runAlarmCarousel(tolerance, minIters, maxIters, histLength, statsFile, combinedPrefix, combinedSuffix):
         assert 0 < tolerance and tolerance < 1
         assert 0 < histLength and histLength < minIters and minIters < maxIters
@@ -155,6 +165,46 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
                 if (len(labelledTuples.keys()) == 4) or ((time.time() - startTime) > 14400):
                     break
 
+    def runManualAlarmCarousel(tolerance, minIters, maxIters, histLength, statsFile, combinedPrefix, combinedSuffix):
+        assert 0 < tolerance and tolerance < 1
+        assert 0 < histLength and histLength < minIters and minIters < maxIters
+
+        numTrue = 0
+        numFalse = 0
+
+        print('Tuple\tConfidence\tGround\tNumTrue\tNumFalse\tFraction\tYetToConvergeFraction\tTime(s)', file=statsFile)
+        while len(labelledTuples) < len(baseQueries):
+            startTime = time.time()
+            yetToConvergeFraction = float(execWrapperCmd('BP {0} {1} {2} {3}'.format(tolerance, minIters, maxIters, histLength)))
+            rankedAlarmList = getRankedAlarms()
+            unlabelledAlarms = [ (t, confidence) for t, confidence in rankedAlarmList if t not in labelledTuples ]
+            t0, conf0 = unlabelledAlarms[0]
+            endTime = time.time()
+            thisTime = int(endTime - startTime)
+
+            print(f'Highest ranked alarm: {t0} (confidence = {conf0}). Real bug (Y) / False alarm (N) / Abort (A)?')
+            ground = next(sys.stdin).strip()
+            if ground == 'A':
+                logging.info('Aborting MAC interaction loop.')
+                break
+            ground = (ground == 'Y')
+            if ground:
+                ground = 'TrueGround'
+                numTrue = numTrue + 1
+            else:
+                ground = 'FalseGround'
+                numFalse = numFalse + 1
+            fraction = numTrue / (numTrue + numFalse)
+            print(f'{t0}\t{conf0}\t{ground}\t{numTrue}\t{numFalse}\t{fraction}\t{yetToConvergeFraction}\t{thisTime}', \
+                  file=statsFile)
+            statsFile.flush()
+
+            with open(f'{combinedPrefix}{numTrue + numFalse - 1}.{combinedSuffix}', 'w') as outFile:
+                printMRankedAlarms(outFile)
+
+            logging.info('Setting tuple {0} to value {1}'.format(t0, t0 in oracleQueries))
+            observe(t0, t0 in oracleQueries)
+
     logging.info('Awaiting command')
     for command in sys.stdin:
         command = command.strip()
@@ -172,7 +222,9 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
             # Output: t belief(t).
             t = components[0]
             fwdCmd = 'Q {0}'.format(bnetDict[t])
-            print('{0} {1}'.format(t, float(execWrapperCmd(fwdCmd))))
+            result = float(execWrapperCmd(fwdCmd))
+            logging.info(f'Pr({t} | evidence) = {result}')
+            print(f'{t} {result}')
 
         elif cmdType == 'FQ':
             # 2b. Factor marginal.
@@ -231,6 +283,7 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
            alarmList = getRankedAlarms()
            topAlarm, confidence = alarmList[0]
            groundTruth = 'TrueGround' if topAlarm in oracleQueries else 'FalseGround'
+           logging.info(f'Top ranked alarm: {topAlarm} (confidence = {confidence}).')
            print('{0} {1} {2}'.format(topAlarm, confidence, groundTruth))
 
         elif cmdType == 'AC':
@@ -253,6 +306,28 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
 
             with open(statsFileName, 'w') as statsFile:
                 runAlarmCarousel(tolerance, minIters, maxIters, histLength, statsFile, combinedPrefix, combinedSuffix)
+
+        elif cmdType == 'MAC':
+            # 2i. Run a manual alarm carousel
+            # Syntax: MAC tolerance minIters maxIters histLength statsFileName combinedPrefix combinedSuffix.
+            # Output Alarm carousel statistics, in the format of stats.txt, printed to statsFileName. Static ranked
+            # list of alarms at step n, in the format of combined.out, is printed to file named
+            # 'combinedPrefixn.combinedSuffix'. Nothing printed to stdout.
+            tolerance = float(components[0])
+            minIters = int(components[1])
+            maxIters = int(components[2])
+            histLength = int(components[3])
+
+            statsFileName = components[4]
+            combinedPrefix = components[5]
+            combinedSuffix = components[6]
+
+            assert 0 < tolerance and tolerance < 1
+            assert 0 < histLength and histLength < minIters and minIters < maxIters
+
+            with open(statsFileName, 'w') as statsFile:
+                runManualAlarmCarousel(tolerance, minIters, maxIters, histLength, statsFile, combinedPrefix, combinedSuffix)
+
 
         else:
             assert cmdType == 'NL', 'Unexpected command {0}!'.format(command)
