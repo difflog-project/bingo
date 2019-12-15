@@ -111,6 +111,7 @@ suite.
 
    The script will place the Bayesian network in the directory `$PROBLEM_DIR/bnet/noaugment_base/`. The most important
    files in this directory are:
+
    1. `named-cons-all.txt.pruned`. This contains the output of the cycle elimination procedure described in Algorithm 2
       of the paper.
    2. `named-bnet.out`. Contains the constraint graph as a Bayesian network with deterministic or and probabilistic and
@@ -121,6 +122,7 @@ suite.
       `named-cons-all.txt`.
    4. `factor-graph.fg`. The underlying marginal inference library, LibDAI, works with factor graphs rather than
       Bayesian networks. This file contains the same Bayesian network as `named-bnet.out` in the form of a factor graph.
+
    In addition, the version of the script with compression produces the intermediate files `named-cons-all.txt.ep`,
    `named-cons-all.txt.cep` and `new-rule-prob.txt`. These files contain versions of `named-cons-all.txt.pruned` with
    various semantics preserving optimizations applied.
