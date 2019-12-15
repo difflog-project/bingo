@@ -126,8 +126,6 @@ suite.
    `named-cons-all.txt.cep` and `new-rule-prob.txt`. These files contain versions of `named-cons-all.txt.pruned` with
    various semantics preserving optimizations applied.
 
-   We will explain the operation of the `build-bnet.sh` scripts later in this README file.
-
 2. **Running the Bingo Interaction Loop (`driver.py`):** We are now ready to run the main Bingo interaction loop. Run
    the command:
    ```
