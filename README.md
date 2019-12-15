@@ -88,13 +88,16 @@ suite.
 1. **Building the Bayesian Network (`build-bnet.sh`):** The `build-bnet.sh` script converts the constraints in
    `named_cons_all.txt` into a Bayesian network. We provide two versions of this script. Either run:
    ```
-   ./scripts/bnet/compressed/build-bnet.sh $PROGRAM_NAME $PROGRAM_PATH noaugment_base rule_prob.txt
+   ./scripts/bnet/compressed/build-bnet.sh $PROBLEM_DIR noaugment_base rule_prob.txt bnet
    ```
    or run
    ```
-   ./scripts/bnet/build-bnet.sh $PROGRAM_NAME $PROGRAM_PATH noaugment_base rule_prob.txt
+   ./scripts/bnet/build-bnet.sh $PROBLEM_DIR noaugment_base rule_prob.txt bnet
    ```
-   The first script
+   The first script applies the chain compression procedure described in Algorithm 3 of our PLDI 2018 paper, but the two
+   two commands are otherwise interchangeable. We recommend the use of the compressed version unless in specific
+   situations where it is inapplicable, such as when learning rule probabilities with the Expectation Maximization
+   algorithm. We will explain the operation of the `build-bnet.sh` scripts in the next section of this README file.
 
 Under the Hood of `build-bnet.sh`
 ---------------------------------
