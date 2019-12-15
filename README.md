@@ -185,5 +185,5 @@ in the interaction loop may find the following commands useful:
    the experiments in the paper.
 
 Note that `driver.py` is very sensitive to the order in which these commands are issued. Please make sure that the
-sequence of commands is from the following regular language: `MAC | (BP* (HA | Q | P) O)* | AC`. All commands except
+sequence of commands is from the following regular language: `MAC | (BP (HA | Q | P)* O)* | AC`. All commands except
 `MAC` and `AC` are idempotent, and `HA`, `Q` and `P` do not change the state of the system.
