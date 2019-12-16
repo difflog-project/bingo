@@ -2,17 +2,11 @@ The Bingo Interactive Alarm Prioritization System
 =================================================
 
 This is the public release of the Bingo interactive alarm prioritization system described in the PLDI 2018 paper [User-Guided Program Reasoning Using Bayesian Inference](https://dl.acm.org/citation.cfm?id=3192417).
-This readme file describes the system workflow, its constituent scripts, and instructions to use them.
+This document describes the system workflow, its constituent scripts, and instructions to use them.
 
-**NOTE 1:** The Bingo system is agnostic of the underlying static analysis. Per our description in the PLDI 2018 paper,
-we nominally assume that the analysis is expressed in Datalog. However, the code we provide here can more generally work
-with any analysis that can be conceptualized as consisting of derivation rules which are repeatedly instantiated until
-fixpoint. In particular, we require that the analysis produces a set of output conclusions (a subset of which are
-reported to the user as warnings) and a derivation graph which connects them together. In the terminology that follows,
-the alarms are reported in a file named `base_queries.txt`, the analysis rules are listed in a file called
-`rule_dict.txt`, and the derivation graph is contained in a file called `named_cons_all.txt`.
+**NOTE 1:** The Bingo system is agnostic of the underlying static analysis. The PLDI 2018 paper nominally assumes that the analysis is expressed in Datalog. However, this code distribution can work more generally with any analysis that can be conceptualized as consisting of derivation rules which are repeatedly instantiated until fixpoint. In particular, we require that the analysis produces a set of output conclusions (a subset of which are reported to the user as warnings) and a derivation graph which connects them together. In the terminology that follows, the alarms are reported in a file named `base_queries.txt`, the analysis rules are listed in a file called `rule_dict.txt`, and the derivation graph is contained in a file called `named_cons_all.txt`.
 
-**NOTE 2:** The PLDI 2018 paper describes the operation of Bingo with two backend static analyses: a datarace analysis
+**NOTE 2:** The PLDI 2018 paper describes the operation of Bingo with two instance static analyses: a datarace analysis
 for Java programs and a taint analysis for Android apps. Running these specific analyses is a somewhat involved process.
 Furthermore, this intial analysis run is unimportant to anyone wishing to port Bingo to a new analysis of their choice.
 In this code distribution, we therefore only include the portion of the workflow after the analysis run has been
@@ -22,7 +16,7 @@ Building Bingo
 --------------
 
 Bingo is mostly written in Python. A few small performance-critical pieces of code have been written in C++. The core of
-Bingo crucially depends on the LibDAI inference library, which the build script will clone itself. Ensure that you have
+Bingo crucially depends on the LibDAI inference library which the build script will clone itself. Ensure that you have
 the Boost C++ libraries and the gmpxx wrapper to the GMP library installed. On Ubuntu, the appropriate dependencies can
 be installed by running:
 ```
