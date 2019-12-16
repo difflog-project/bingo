@@ -1,9 +1,9 @@
 The Bingo Interactive Alarm Prioritization System
 =================================================
 
-This is the public release of the Bingo interactive alarm prioritization system. The system is presented in the paper
+This is the public release of the Bingo interactive alarm prioritization system described in the paper
 presented at PLDI 2018: [User-Guided Program Reasoning Using Bayesian Inference](https://dl.acm.org/citation.cfm?id=3192417).
-In this readme file, we will describe the system workflow, its constituent scripts, and instructions to use them.
+This readme file describes the system workflow, its constituent scripts, and instructions to use them.
 
 **NOTE 1:** The Bingo system is agnostic of the underlying static analysis. Per our description in the PLDI 2018 paper,
 we nominally assume that the analysis is expressed in Datalog. However, the code we provide here can more generally work
