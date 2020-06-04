@@ -51,8 +51,8 @@ labelledTuples = {}
 
 oracleQueries = set([ line.strip() for line in open(oracleQueriesFileName) if len(line.strip()) > 0 ])
 baseQueries = set([ line.strip() for line in open(baseQueriesFileName) if len(line.strip()) > 0 ])
-assert(oracleQueries.issubset(baseQueries))
-assert(baseQueries.issubset(set(bnetDict.keys())))
+for q in oracleQueries: assert q in baseQueries, f'Oracle query {q} not found in baseQueries'
+for q in baseQueries: assert q in bnetDict, f'Base query {q} not found in bnetDict'
 
 logging.info('Populated {0} oracle queries.'.format(len(oracleQueries)))
 logging.info('Populated {0} base queries.'.format(len(baseQueries)))

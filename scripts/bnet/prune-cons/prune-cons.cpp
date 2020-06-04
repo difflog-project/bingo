@@ -72,6 +72,7 @@ unordered_map<string, size_t> computeTupleDob(const set<vector<string>>& allClau
     size_t maxDob = 0, unreachableTuples = 0;
     for (const auto& tupleDobPair : tupleDob) {
         maxDob = max(maxDob, tupleDobPair.second);
+        clog << __LOGSTR__ << "Tuple " << tupleDobPair.first << " birted at epoch " << tupleDobPair.second << "." << endl;
         if (tupleDobPair.second == numeric_limits<size_t>::max()) {
             unreachableTuples++;
         }
