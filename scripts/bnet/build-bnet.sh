@@ -24,7 +24,7 @@ set -e
 export PROGRAM_PATH=`readlink -f $1`
 export AUGMENT_DIR=$2
 export RULE_PROB_FILENAME=$3
-export OP_TUPLE_FILENAME="$PROGRAM_PATH/base_queries.txt"
+export OP_TUPLE_FILENAME="$PROGRAM_PATH/observable-tuples.txt"
 
 if [ ! -f $RULE_PROB_FILENAME ]; then
     >&2 echo "$RULE_PROB_FILENAME not found!"
@@ -49,17 +49,30 @@ fi
 
 mkdir -p $PROGRAM_PATH/bnet/$AUGMENT_DIR
 
+# Step 0.5: Reify EDB tuples in named_cons_all.txt
+# named_cons_all.txt ==> named_cons_all.txt.edbderived
+./scripts/bnet/compressed/derive-edb.py < $PROGRAM_PATH/named_cons_all.txt \
+                                        > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.edbderived \
+                                        2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/derive-edb.log
+
+# Step 1: Remove cycles from named_cons_all.txt + various optimizations
+# named_cons_all.txt ==> named_cons_all.txt.pruned
 ./scripts/bnet/prune-cons/prune-cons $AUGMENT $OP_TUPLE_FILENAME \
-     < $PROGRAM_PATH/named_cons_all.txt \
-     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned \
+     < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.edbderived \
+     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned.edbderived \
      2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/prune-cons.log
 
+# Step 2: Convert named_cons_all.txt.pruned to Bayesian network
+# named_cons_all.txt.edbderived.pruned ==> (named-bnet.out, bnet-dict.out)
 ./scripts/bnet/cons_all2bnet.py $PROGRAM_PATH/bnet/$AUGMENT_DIR/bnet-dict.out narrowor \
-    < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned \
+    < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned.edbderived \
     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named-bnet.out \
     2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/cons_all2bnet.log
 
-./scripts/bnet/bnet2fg.py $RULE_PROB_FILENAME 0.999 \
+# Step 3: Wrapper.cpp works with "factor graph", not with Bayesian networks
+# So, convert Bayesian network to "factor graph"
+# named-bnet.out ==> factor-graph.fg
+./scripts/bnet/bnet2fg.py $RULE_PROB_FILENAME 0.9 \
     < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named-bnet.out \
     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/factor-graph.fg \
     2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/bnet2fg.log
