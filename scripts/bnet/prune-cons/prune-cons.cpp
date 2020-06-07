@@ -299,7 +299,10 @@ int main(int argc, char *argv[]) {
     clog << __LOGSTR__ << "Loaded " << allOutputTuples.size() << " output tuples." << endl;
 
     for (const auto& t : allOutputTuples) {
-        assert(allConsequents.find(t) != allConsequents.end());
+        if (allConsequents.find(t) == allConsequents.end()) {
+            clog << __LOGSTR__ << "Error! Tuple " << t << " is not the conclusion of any clause!" << endl;
+            assert(false);
+        }
     }
 
     // and map each tuple to the clauses in which it appears.

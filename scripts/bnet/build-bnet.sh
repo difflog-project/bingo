@@ -26,6 +26,16 @@ export AUGMENT_DIR=$2
 export RULE_PROB_FILENAME=$3
 export OP_TUPLE_FILENAME="$PROGRAM_PATH/base_queries.txt"
 
+if [ ! -f $RULE_PROB_FILENAME ]; then
+    >&2 echo "$RULE_PROB_FILENAME not found!"
+    exit 1
+fi
+
+if [ ! -f $OP_TUPLE_FILENAME ]; then
+    >&2 echo "$OP_TUPLE_FILENAME not found!"
+    exit 1
+fi
+
 if [[ $AUGMENT_DIR == noaugment* ]]
 then
    export AUGMENT="noaugment"

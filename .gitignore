@@ -1,2 +1,4 @@
 a.out
+*.out
+stats.txt
 libdai

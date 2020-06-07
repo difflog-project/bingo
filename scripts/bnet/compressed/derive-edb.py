@@ -65,8 +65,8 @@ for t in allInputTuples:
             logging.info('Associating relation {0} with rule {1}.'.format(relName, ruleName))
 
         ruleName = relNameRuleNameMap[relName]
-        allClauses.add(t)
-        allRuleNames[t] = ruleName
+        allClauses.add((t,))
+        allRuleNames[(t,)] = ruleName
     else: logging.info('Leaving tuple {0} underived.'.format(t))
 
 ########################################################################################################################
