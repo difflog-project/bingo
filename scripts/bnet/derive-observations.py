@@ -33,7 +33,7 @@ logging.basicConfig(level=logging.INFO, \
                     datefmt="%H:%M:%S")
 
 namedConsAllFilename, observedQueriesFilename, ruleProbFilename, \
-outNamedConsAllFilename, outRuleProbFileName = sys.argv[1:]
+outNamedConsAllFilename, outRuleProbFilename = sys.argv[1:]
 
 ########################################################################################################################
 # 1. Accept input
@@ -62,7 +62,7 @@ allObservedTuples = { (t.strip(), float(p)) for t, p in allObservedTuples }
 ####
 # 1c. Load rule probabilities
 
-ruleProbs = [ line.strip().split(': ') for line in open(ruleProbFileName) ]
+ruleProbs = [ line.strip().split(': ') for line in open(ruleProbFilename) ]
 ruleProbs = { line[0]: float(line[1]) for line in ruleProbs }
 
 ####
@@ -86,8 +86,8 @@ allInputTuples = allTuples - allConsequents
 ####
 # 1e. Acknowledge inputs
 
-for t in allObservedTuples: assert t in allTuples, f'Unable to locate observed tuple {t}.'
-for t, p in allObservedTuples.items():
+for t, p in allObservedTuples:
+    assert t in allTuples, f'Unable to locate observed tuple {t}.'
     assert 0.0 <= p and p <= 1.0, f'Ill-formed observation confidence {p} for tuple {t}'
 
 logging.info(f'Loaded {len(allClauses)} clauses.')
@@ -108,7 +108,7 @@ for t, p in allObservedTuples:
         index = index + 1
         if candidateRuleName not in ruleProbs:
             newRuleName = candidateRuleName
-    newClause = tuple(f'NOT {t}', newT)
+    newClause = (f'NOT {t}', newT)
 
     allClauses = allClauses | { newClause }
     allRuleNames[newClause] = newRuleName

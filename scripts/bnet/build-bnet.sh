@@ -56,17 +56,19 @@ mkdir -p $PROGRAM_PATH/bnet/$AUGMENT_DIR
                                         2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/derive-edb.log
 
 # Step 2: Introduce proxy observation tuples to give feedback with partial confidence
+export OBS_DERIVED_RULE_PROBFILENAME=`basename $RULE_PROB_FILENAME`.obs-derived.txt
 ./scripts/bnet/derive-observations.py $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.edbderived \
                                       $PROGRAM_PATH/observed-queries.txt \
                                       $RULE_PROB_FILENAME \
                                       $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.edbobsderived \
-                                      $PROGRAM_PATH/bnet/$AUGMENT_DIR/$RULE_PROB_FILENAME.obs-derived
+                                      $PROGRAM_PATH/bnet/$AUGMENT_DIR/$OBS_DERIVED_RULE_PROBFILENAME \
+                                      2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/derive-observations.log
 
 # Step 3: Remove cycles from named_cons_all.txt + various optimizations
 # named_cons_all.txt ==> named_cons_all.txt.pruned
 ./scripts/bnet/prune-cons/prune-cons $AUGMENT $OP_TUPLE_FILENAME \
      < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.edbobsderived \
-     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned.edbdobserived \
+     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned.edbobserived \
      2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/prune-cons.log
 
 # Step 4: Convert named_cons_all.txt.pruned to Bayesian network
@@ -79,7 +81,7 @@ mkdir -p $PROGRAM_PATH/bnet/$AUGMENT_DIR
 # Step 5: Wrapper.cpp works with "factor graph", not with Bayesian networks
 # So, convert Bayesian network to "factor graph"
 # named-bnet.out ==> factor-graph.fg
-./scripts/bnet/bnet2fg.py $PROGRAM_PATH/bnet/$AUGMENT_DIR/$RULE_PROB_FILENAME.obs-derived 0.9 \
+./scripts/bnet/bnet2fg.py $PROGRAM_PATH/bnet/$AUGMENT_DIR/$OBS_DERIVED_RULE_PROBFILENAME 0.9 \
     < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named-bnet.out \
     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/factor-graph.fg \
     2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/bnet2fg.log
