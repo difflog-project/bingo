@@ -68,7 +68,7 @@ export OBS_DERIVED_RULE_PROBFILENAME=`basename $RULE_PROB_FILENAME`.obs-derived.
 # named_cons_all.txt ==> named_cons_all.txt.pruned
 ./scripts/bnet/prune-cons/prune-cons $AUGMENT $OP_TUPLE_FILENAME \
      < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.edbobsderived \
-     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned.edbobserived \
+     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned.edbobsderived \
      2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/prune-cons.log
 
 # Step 4: Convert named_cons_all.txt.pruned to Bayesian network
