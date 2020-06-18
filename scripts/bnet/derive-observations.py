@@ -101,6 +101,7 @@ logging.info(f'Loaded {len(ruleProbs)} rule probabilities.')
 index = 0
 for t, p in allObservedTuples:
     newT = 'Obs' + t
+
     newRuleName = None
     while newRuleName is None:
         candidateRuleName = f'RObs{index}'
@@ -112,6 +113,11 @@ for t, p in allObservedTuples:
     allClauses = allClauses | { newClause }
     allRuleNames[newClause] = newRuleName
     ruleProbs[newRuleName] = p
+
+    assert newT not in allTuples
+    assert newT not in allConsequents
+    allTuples = allTuples | { newT }
+    allConsequents = allConsequents | { newT }
 
 ########################################################################################################################
 # 3. Print output
