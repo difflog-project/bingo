@@ -49,30 +49,37 @@ fi
 
 mkdir -p $PROGRAM_PATH/bnet/$AUGMENT_DIR
 
-# Step 0.5: Reify EDB tuples in named_cons_all.txt
+# Step 1: Reify EDB tuples in named_cons_all.txt
 # named_cons_all.txt ==> named_cons_all.txt.edbderived
 ./scripts/bnet/compressed/derive-edb.py < $PROGRAM_PATH/named_cons_all.txt \
                                         > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.edbderived \
                                         2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/derive-edb.log
 
-# Step 1: Remove cycles from named_cons_all.txt + various optimizations
+# Step 2: Introduce proxy observation tuples to give feedback with partial confidence
+./scripts/bnet/derive-observations.py $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.edbderived \
+                                      $PROGRAM_PATH/observed-queries.txt \
+                                      $RULE_PROB_FILENAME \
+                                      $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.edbobsderived \
+                                      $PROGRAM_PATH/bnet/$AUGMENT_DIR/$RULE_PROB_FILENAME.obs-derived
+
+# Step 3: Remove cycles from named_cons_all.txt + various optimizations
 # named_cons_all.txt ==> named_cons_all.txt.pruned
 ./scripts/bnet/prune-cons/prune-cons $AUGMENT $OP_TUPLE_FILENAME \
-     < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.edbderived \
-     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned.edbderived \
+     < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.edbobsderived \
+     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned.edbdobserived \
      2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/prune-cons.log
 
-# Step 2: Convert named_cons_all.txt.pruned to Bayesian network
+# Step 4: Convert named_cons_all.txt.pruned to Bayesian network
 # named_cons_all.txt.edbderived.pruned ==> (named-bnet.out, bnet-dict.out)
 ./scripts/bnet/cons_all2bnet.py $PROGRAM_PATH/bnet/$AUGMENT_DIR/bnet-dict.out narrowor \
-    < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned.edbderived \
+    < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named_cons_all.txt.pruned.edbobsderived \
     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/named-bnet.out \
     2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/cons_all2bnet.log
 
-# Step 3: Wrapper.cpp works with "factor graph", not with Bayesian networks
+# Step 5: Wrapper.cpp works with "factor graph", not with Bayesian networks
 # So, convert Bayesian network to "factor graph"
 # named-bnet.out ==> factor-graph.fg
-./scripts/bnet/bnet2fg.py $RULE_PROB_FILENAME 0.9 \
+./scripts/bnet/bnet2fg.py $PROGRAM_PATH/bnet/$AUGMENT_DIR/$RULE_PROB_FILENAME.obs-derived 0.9 \
     < $PROGRAM_PATH/bnet/$AUGMENT_DIR/named-bnet.out \
     > $PROGRAM_PATH/bnet/$AUGMENT_DIR/factor-graph.fg \
     2> $PROGRAM_PATH/bnet/$AUGMENT_DIR/bnet2fg.log
