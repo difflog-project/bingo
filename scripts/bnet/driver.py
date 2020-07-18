@@ -86,6 +86,11 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
         execWrapperCmd(fwdCmd)
         labelledTuples[t] = value
 
+    def unobserve(t):
+        assert t in labelledTuples, f'Attempting to unobserve already unobserved variable {t}'
+        execWrapperCmd(f'UC {t}')
+        del labelledTuples[t]
+
     def getRankedAlarms():
         alarmList = []
         for t in baseQueries:
@@ -271,8 +276,18 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
             observe(t, value)
             print('O {0} {1}'.format(t, 'true' if value else 'false'))
 
+        elif cmdType == 'UC':
+            # 2f. Unobserve previously observed tuples.
+            # Syntax: UC t.
+            # Requires that t have been previously observed.
+            # Output: 'UC t'. Merely an acknowledgment of unobservation.
+            # Experimental feature, to eliminate troublesome NaNs.
+            t, = components
+            unobserve(t)
+            print(f'UC {t}')
+
         elif cmdType == 'P':
-            # 2f. Printing ranked list of alarms to file
+            # 2g. Printing ranked list of alarms to file
             # Syntax: P filename.
             # Output: Ranked list of alarms, in the format of combined.out. Printed to filename. Acknowledgment printed
             # to stdout.
@@ -281,7 +296,7 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
             print('P {0}'.format(outFileName))
 
         elif cmdType == 'HA':
-           # 2g. Get the alarm with the highest ranking and maximum confidence.
+           # 2h. Get the alarm with the highest ranking and maximum confidence.
            # Syntax: HA.
            # Output: A tuple t
            alarmList = getRankedAlarms()
@@ -291,7 +306,7 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
            print('{0} {1} {2}'.format(topAlarm, confidence, groundTruth))
 
         elif cmdType == 'AC':
-            # 2h. Run alarm carousel
+            # 2i. Run alarm carousel
             # Syntax: AC tolerance minIters maxIters histLength statsFileName combinedPrefix combinedSuffix.
             # Output: Alarm carousel statistics, in the format of stats.txt, printed to statsFileName. Static ranked
             # list of alarms at step n, in the format of combined.out, is printed to file named
@@ -312,7 +327,7 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
                 runAlarmCarousel(tolerance, minIters, maxIters, histLength, statsFile, combinedPrefix, combinedSuffix)
 
         elif cmdType == 'MAC':
-            # 2i. Run a manual alarm carousel
+            # 2j. Run a manual alarm carousel
             # Syntax: MAC tolerance minIters maxIters histLength statsFileName combinedPrefix combinedSuffix.
             # Output Alarm carousel statistics, in the format of stats.txt, printed to statsFileName. Static ranked
             # list of alarms at step n, in the format of combined.out, is printed to file named
@@ -331,7 +346,6 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
 
             with open(statsFileName, 'w') as statsFile:
                 runManualAlarmCarousel(tolerance, minIters, maxIters, histLength, statsFile, combinedPrefix, combinedSuffix)
-
 
         else:
             assert cmdType == 'NL', 'Unexpected command {0}!'.format(command)
