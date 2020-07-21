@@ -110,14 +110,14 @@ for t, p in allObservedTuples:
             newRuleName = candidateRuleName
     newClause = (f'NOT {t}', newT)
 
-    allClauses = allClauses | { newClause }
+    allClauses |= { newClause }
     allRuleNames[newClause] = newRuleName
     ruleProbs[newRuleName] = p
 
     assert newT not in allTuples
     assert newT not in allConsequents
-    allTuples = allTuples | { newT }
-    allConsequents = allConsequents | { newT }
+    allTuples |= { newT }
+    allConsequents |= { newT }
 
 ########################################################################################################################
 # 3. Print output
