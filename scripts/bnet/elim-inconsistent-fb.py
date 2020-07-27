@@ -1,4 +1,4 @@
-#!/usr/bin/env pypy3
+#!/usr/bin/env python3
 
 ########################################################################################################################
 # Usage: ./elim-inconsistent-feedback.py named_cons_all.txt feedback.txt skipTuples.txt
@@ -99,7 +99,7 @@ logging.info(f'Read {len(origFeedback)} feedback tuples')
 # then feedback[t] = false
 # NOTE: Each set of such clauses is basically shorthand for (b1 or b2 or ... or bk) => t
 
-# Finally, feedback := newFeedback intersection origFeedback
+# Finally, feedback = newFeedback intersection origFeedback
 
 # Informally, we are "pushing false forwards"
 # Why don't we "push true backwards"?

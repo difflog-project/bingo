@@ -103,6 +103,18 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
             return (-getLabelInt(rec[0]), -confidence, not math.isnan(rec[1]), rec[0])
         return sorted(alarmList, key=sortKey)
 
+    def getRankedTuples():
+        tupleList = []
+        for t, index in bnetDict.items():
+            if ' ' not in t:
+                response = float(execWrapperCmd(f'Q {index}'))
+                tupleList.append((t, response))
+        def getLabelInt(t): return 0 if t not in labelledTuples else 1 if labelledTuples[t] else -1
+        def sortKey(rec):
+            confidence = rec[1] if not math.isnan(rec[1]) else 0
+            return (-getLabelInt(rec[0]), -confidence, not math.isnan(rec[1]), rec[0])
+        return sorted(tupleList, key=sortKey)
+
     def getInversionCount(alarmList):
         numInversions = 0
         numFalse = 0
@@ -133,6 +145,18 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
                     'PosLabel' if labelledTuples[t] else \
                     'NegLabel'
             print(f'{index}\t{confidence}\t{label}\t{t}', file=outFile)
+
+    def printRankedTuples(outFile):
+        alarmList = getRankedTuples()
+        print('Rank\tConfidence\tGround\tLabel\tComments\tTuple', file=outFile)
+        index = 0
+        for t, confidence in alarmList:
+            index = index + 1
+            ground = 'TrueGround' if t in oracleQueries else 'FalseGround'
+            label = 'Unlabelled' if t not in labelledTuples else \
+                    'PosLabel' if labelledTuples[t] else \
+                    'NegLabel'
+            print(f'{index}\t{confidence}\t{ground}\t{label}\tSPOkGoodGood\t{t}', file=outFile)
 
     def runAlarmCarousel(tolerance, minIters, maxIters, histLength, statsFile, combinedPrefix, combinedSuffix):
         assert 0 < tolerance and tolerance < 1
@@ -295,8 +319,17 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
             with open(outFileName, 'w') as outFile: printRankedAlarms(outFile)
             print('P {0}'.format(outFileName))
 
+        elif cmdType == 'PT':
+            # 2h. Printing ranked list of tuples to file
+            # Syntax: PT filename.
+            # Output: Ranked list of tuples, in the format of combined.out. Printed to filename. Acknowledgment printed
+            # to stdout.
+            outFileName = components[0]
+            with open(outFileName, 'w') as outFile: printRankedTuples(outFile)
+            print('PT {0}'.format(outFileName))
+
         elif cmdType == 'HA':
-           # 2h. Get the alarm with the highest ranking and maximum confidence.
+           # 2i. Get the alarm with the highest ranking and maximum confidence.
            # Syntax: HA.
            # Output: A tuple t
            alarmList = getRankedAlarms()
@@ -306,7 +339,7 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
            print('{0} {1} {2}'.format(topAlarm, confidence, groundTruth))
 
         elif cmdType == 'AC':
-            # 2i. Run alarm carousel
+            # 2j. Run alarm carousel
             # Syntax: AC tolerance minIters maxIters histLength statsFileName combinedPrefix combinedSuffix.
             # Output: Alarm carousel statistics, in the format of stats.txt, printed to statsFileName. Static ranked
             # list of alarms at step n, in the format of combined.out, is printed to file named
@@ -327,7 +360,7 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
                 runAlarmCarousel(tolerance, minIters, maxIters, histLength, statsFile, combinedPrefix, combinedSuffix)
 
         elif cmdType == 'MAC':
-            # 2j. Run a manual alarm carousel
+            # 2k. Run a manual alarm carousel
             # Syntax: MAC tolerance minIters maxIters histLength statsFileName combinedPrefix combinedSuffix.
             # Output Alarm carousel statistics, in the format of stats.txt, printed to statsFileName. Static ranked
             # list of alarms at step n, in the format of combined.out, is printed to file named
