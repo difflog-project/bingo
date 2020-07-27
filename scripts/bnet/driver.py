@@ -88,7 +88,7 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
 
     def unobserve(t):
         assert t in labelledTuples, f'Attempting to unobserve already unobserved variable {t}'
-        execWrapperCmd(f'UC {t}')
+        execWrapperCmd(f'UC {bnetDict[t]}')
         del labelledTuples[t]
 
     def getRankedAlarms():
