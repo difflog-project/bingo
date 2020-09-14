@@ -41,5 +41,5 @@ def load():
 def get_weight(n):
 	# weight in [0,1]
 	if ncons is None:return 1
-	return .1*weight_cache[n]
+	return weight_cache[n]
 	#return .2*hist[comp[DU2node[n]]]/max(hist)
