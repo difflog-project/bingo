@@ -22,13 +22,13 @@ import subprocess
 import sys
 import time
 import re
-import rankv2
+#import rankv2
 
 dictFileName = sys.argv[1]
 fgFileName = sys.argv[2]
 baseQueriesFileName = sys.argv[3]
 oracleQueriesFileName = sys.argv[4]
-rankv2.load()
+#rankv2.load()
 
 wrapperExecutable = './libdai/wrapper'
 
@@ -102,8 +102,8 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
         def getLabelInt(t): return 0 if t not in labelledTuples else 1 if labelledTuples[t] else -1
         def sortKey(rec):
             confidence = rec[1] if not math.isnan(rec[1]) else 0
-            return -(rankv2.get_weight(rec[0])+confidence)
-            #return (-getLabelInt(rec[0]), -confidence, not math.isnan(rec[1]), rec[0])
+            #return -(rankv2.get_weight(rec[0])+confidence)
+            return (-getLabelInt(rec[0]), -confidence, not math.isnan(rec[1]), rec[0])
         return sorted(alarmList, key=sortKey)
 
     def getRankedTuples():
