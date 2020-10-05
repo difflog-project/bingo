@@ -102,7 +102,7 @@ with subprocess.Popen([wrapperExecutable, fgFileName], \
         def getLabelInt(t): return 0 if t not in labelledTuples else 1 if labelledTuples[t] else -1
         def sortKey(rec):
             confidence = rec[1] if not math.isnan(rec[1]) else 0
-            return -(confidence, rankv2.get_weight(rec[0]))
+            return (-confidence, -rankv2.get_weight(rec[0]))
             #return (-getLabelInt(rec[0]), -confidence, not math.isnan(rec[1]), rec[0])
         return sorted(alarmList, key=sortKey)
 
